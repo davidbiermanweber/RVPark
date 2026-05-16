@@ -12,5 +12,8 @@ I use github and I code at work but I don't get to create stuff from the beginin
 - Paola Juarez	paolajuarez@mail.weber.edu
 - Austin Hodson	austinhodson@mail.weber.edu
 - Alexander Stapp	alexanderstapp@mail.weber.edu
+Hello I'm Alexander Stapp! I'm planning on getting my Bachelor's of Computer Science in the fall, and afterwards I plan on serving active duty in the Air Force.
+My hobbies include hiking, reading, and a lot of gaming. I dabble heavily in both video games and tabletop RPGS like D&D. My longest D&D campaign lasted about 3 years.
+I mainly like game development and front-end work. And I am really excited to work in a team and learn about the software engineering pipeline!  
 - Abraham Maldonado Acuna	amaldonadoacuna@mail.weber.edu
 - Seth Cash	sethcash@mail.weber.edu
