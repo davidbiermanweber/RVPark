@@ -14,3 +14,6 @@ I use github and I code at work but I don't get to create stuff from the beginin
 - Alexander Stapp	alexanderstapp@mail.weber.edu
 - Abraham Maldonado Acuna	amaldonadoacuna@mail.weber.edu
 - Seth Cash	sethcash@mail.weber.edu
+Hello, my name is Seth Cash and I'm excited to get to learn more about software engineering and git! I work full time as a pharmacy technician 
+and do classes online at night. I like playing video games and doing photography. I should finish my degree in December. 
+I don't know much about git etiquette, so I'm ready to learn more about it.
