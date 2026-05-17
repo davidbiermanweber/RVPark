@@ -11,6 +11,9 @@ I use github and I code at work but I don't get to create stuff from the beginin
 
 - Paola Juarez	paolajuarez@mail.weber.edu
 - Austin Hodson	austinhodson@mail.weber.edu
+Hello I am Austin Hodson, and I too am excited to work on this project with you all. I am married with two kids. I currently work at a Jr ETL Developer for AFCU.
+I like playing video games, fly fishing, and camping. I only like being inside when the weather is poor. I only have four classes left until graduation and I can relax a little bit.
+
 - Alexander Stapp	alexanderstapp@mail.weber.edu
 - Abraham Maldonado Acuna	amaldonadoacuna@mail.weber.edu
 - Seth Cash	sethcash@mail.weber.edu
