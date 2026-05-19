@@ -15,6 +15,9 @@ Hello, I am Paola Juarez. I am currently working on finishing my Bachelors in CS
 - Austin Hodson	austinhodson@mail.weber.edu
 - Alexander Stapp	alexanderstapp@mail.weber.edu
 - Abraham Maldonado Acuna	amaldonadoacuna@mail.weber.edu
+Hello I'm Abraham Maldonado I look forward to working with all of you. I am a CS student who is working on his Bachelors degree and if all goes well I may Graduate after spring semester of 2027. I know C# and C++. I enjoy playing video games and coding.
+
+
 - Seth Cash	sethcash@mail.weber.edu
 Hello, my name is Seth Cash and I'm excited to get to learn more about software engineering and git! I work full time as a pharmacy technician 
 and do classes online at night. I like playing video games and doing photography. I should finish my degree in December. 
