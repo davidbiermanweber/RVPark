@@ -11,6 +11,7 @@ I use github and I code at work but I don't get to create stuff from the beginin
 One more small change.
 
 - Paola Juarez	paolajuarez@mail.weber.edu
+Hello, I am Paola Juarez. I am currently working on finishing my Bachelors in CS and a minor in Data Analytics hoping to work in the Data Science field or something related. In my free time I like to go to the gym, read, and hangout with friends/family. I am excited to see what we learn in this course!
 - Austin Hodson	austinhodson@mail.weber.edu
 - Alexander Stapp	alexanderstapp@mail.weber.edu
 - Abraham Maldonado Acuna	amaldonadoacuna@mail.weber.edu
