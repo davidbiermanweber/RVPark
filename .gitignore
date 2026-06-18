@@ -3,3 +3,5 @@ publish/
 publish.zip
 *.exe
 *.dll
+rvpark.db
+obj/
