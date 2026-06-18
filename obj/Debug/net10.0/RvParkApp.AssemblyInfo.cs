@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RvParkApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e2405e9f7b4ae29dc00557c7d7d403914dd37080")]
 [assembly: System.Reflection.AssemblyProductAttribute("RvParkApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RvParkApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
