@@ -222,3 +222,4 @@ C:\schoolCourses\softwareEngineeringII\RvParkApp\bin\Release\net10.0\runtimes\wi
 C:\schoolCourses\softwareEngineeringII\RvParkApp\bin\Release\net10.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\schoolCourses\softwareEngineeringII\RvParkApp\bin\Release\net10.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\schoolCourses\softwareEngineeringII\RvParkApp\bin\Release\net10.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\schoolCourses\softwareEngineeringII\RvParkApp\obj\Release\net10.0\RvParkApp.sourcelink.json
