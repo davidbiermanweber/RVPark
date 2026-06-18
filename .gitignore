@@ -5,3 +5,4 @@ publish.zip
 *.dll
 rvpark.db
 obj/
+bin/
