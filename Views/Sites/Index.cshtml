@@ -1,0 +1,32 @@
+@model IEnumerable<Site>
+@{ ViewData["Title"] = "Sites"; }
+
+<h2>Sites</h2>
+<a asp-action="Create" class="btn btn-primary mb-3">Add Site</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Desciption</th>
+            <th>Category</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var site in Model)
+        {
+            <tr>
+                <td>@site.Name</td>
+                <td>@site.Description</td>
+                <td>@site.Category?.Name</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@site.Id" class="btn btn-warning btn-sm me-2">Edit</a>
+                    <form asp-action="Delete" asp-route-id="@site.Id" method="post" onsubmit="return confirm('Delete this site?');" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
