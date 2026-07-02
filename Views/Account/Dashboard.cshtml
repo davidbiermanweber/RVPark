@@ -1,0 +1,29 @@
+@{
+    // Retrieve the Access Level from the user's signed-in cookie claims
+    var accessLevelStr = User.FindFirst("AccessLevel")?.Value;
+    int accessLevel = 0;
+    int.TryParse(accessLevelStr, out accessLevel);
+}
+
+<div style="text-align: center; margin-top: 50px;">
+    
+    @if (accessLevel == 3)
+    {
+        <h1 style="color: gold; text-shadow: 1px 1px 2px black;">Welcome Admin</h1>
+        <div style="margin: 20px 0;">
+            <a asp-action="ManageEmployees" class="btn btn-warning">Manage Employees</a>
+        </div>
+    }
+    else
+    {
+        <h1>Welcome, @User.FindFirst("Name")?.Value!</h1>
+    }
+
+    <h3>Your current Access Level is: <strong>@accessLevel</strong></h3>
+
+    <hr />
+
+    <form asp-action="Logout" method="post">
+        <button type="submit" class="btn btn-danger">Log Out</button>
+    </form>
+</div>

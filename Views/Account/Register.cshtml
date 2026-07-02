@@ -1,0 +1,12 @@
+@model RvParkApp.Models.Employee
+<h2>Register Employee</h2>
+
+<form asp-action="Register" method="post">
+    <div><label>Name:</label> <input asp-for="Name" required /></div>
+    <div><label>Employee ID:</label> <input asp-for="EmployeeId" required /></div>
+    <div><label>Username:</label> <input asp-for="Username" required /></div>
+    <div><label>Password:</label> <input type="password" asp-for="Password" required /></div>
+    <div><label>Access Level:</label> <input type="number" asp-for="AccessLevel" required /></div>
+    
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
