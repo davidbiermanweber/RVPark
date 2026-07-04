@@ -26,8 +26,11 @@ Does that make sense? Want to start building it out?
 
 
 
---command to push the code:
+--commands to push the code:
+dotnet publish -c Release -o ./publish
+Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force
 az webapp deploy --resource-group RvParkRG --name rvparkapp-group2 --src-path ./publish.zip --type zip
+
 
 url:
 https://rvparkapp-group2.azurewebsites.net
