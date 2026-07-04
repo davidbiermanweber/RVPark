@@ -5,4 +5,5 @@ public class Site
     public string Description {get; set; } = string.Empty;
     public int CategoryId {get; set;}
     public Category? Category {get; set;} 
+    public List<SitePhoto> Photos { get; set; } = new();
 }

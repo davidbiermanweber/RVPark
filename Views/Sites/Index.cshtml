@@ -21,11 +21,23 @@
                 <td>@site.Description</td>
                 <td>@site.Category?.Name</td>
                 <td>
+                    <a asp-controller="SitePhotos" asp-action="Index" asp-route-siteId="@site.Id" class="btn btn-info btn-sm me-2">Photos</a>
                     <a asp-action="Edit" asp-route-id="@site.Id" class="btn btn-warning btn-sm me-2">Edit</a>
                     <form asp-action="Delete" asp-route-id="@site.Id" method="post" onsubmit="return confirm('Delete this site?');" style="display:inline;">
                         <button type="submit" class="btn btn-danger btn-small">Delete</button>
                     </form>
                 </td>
+                @if (site.Photos.Any())
+                {
+                    <tr>
+                        <td colspan="4">
+                            @foreach (var photo in site.Photos)
+                            {
+                                <img src="/images/sites/@photo.FileName" style="height:80px; width:120px; objec-fit:cover; border-radius:4px;" />
+                            }
+                        </td>
+                    </tr>
+                }
             </tr>
         }
     </tbody>

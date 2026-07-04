@@ -8,4 +8,6 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories { get; set; }
 
     public DbSet<Site> Sites {get; set;}
+
+    public DbSet<SitePhoto> SitePhotos {get; set;}
 }
