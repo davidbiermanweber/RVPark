@@ -1,0 +1,43 @@
+@model IEnumerable<RvParkApp.Models.Employee>
+
+<h2>Manage Employees</h2>
+
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Password</th>
+            <th>Access Level</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var emp in Model)
+        {
+            <tr>
+                <td>@emp.EmployeeId</td>
+                <td>@emp.Name</td>
+                <td>@emp.Username</td>
+                <td>@emp.Password</td>
+                <td>
+                    @if(emp.AccessLevel == 3)
+                    {
+                        <strong><span style="color: goldenrod;">(Admin) </span></strong>
+                    }
+                    else
+                    {
+                        @emp.AccessLevel
+                    }
+                </td>
+                <td>
+                    <a asp-action="EditAccessLevel" asp-route-id="@emp.Id" class="btn btn-sm btn-primary">Edit Access</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<br />
+<a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
