@@ -1,0 +1,36 @@
+
+Sites — a site has:
+
+A name/number
+A category/type (linked to Categories)
+Multiple photos
+Multiple prices (price can vary by date range)
+Full CRUD for Sites — Create, Read, Update, Delete
+
+Photos — each site can have multiple photos uploaded
+
+Prices — each site can have multiple prices tied to a date range (e.g. $50/night from June-August, $30/night Sept-May)
+
+The workflow they're describing looks like:
+
+List of sites → click a site → Edit site details
+From the site edit page → click "Manage Photos" → add/remove photos
+From the site edit page → click "Manage Prices" → add/remove price ranges
+Navigate back to site list
+So your database tables would be:
+
+Sites (Id, Name, CategoryId, Description, etc.)
+SitePhotos (Id, SiteId, PhotoUrl/FileName)
+SitePrices (Id, SiteId, Price, StartDate, EndDate)
+Does that make sense? Want to start building it out?
+
+
+
+--commands to push the code:
+dotnet publish -c Release -o ./publish
+Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force
+az webapp deploy --resource-group RvParkRG --name rvparkapp-group2 --src-path ./publish.zip --type zip
+
+
+url:
+https://rvparkapp-group2.azurewebsites.net

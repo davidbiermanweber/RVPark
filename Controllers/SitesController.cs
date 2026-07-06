@@ -10,7 +10,10 @@ public class SitesController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var sites = await _db.Sites.Include(s => s.Category).ToListAsync();
+        var sites = await _db.Sites
+        .Include(s => s.Category)
+        .Include(s => s.Photos)
+        .ToListAsync();
         return View(sites);
     }
 
@@ -60,4 +63,5 @@ public class SitesController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
+    
 }
