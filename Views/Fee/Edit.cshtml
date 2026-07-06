@@ -1,0 +1,23 @@
+@model Fee
+@{ ViewData["Title"] = "Edit Fee"; }
+
+<h2>Edit Fee</h2>
+
+<form asp-action="Edit" method="post">
+
+    <input type="hidden" asp-for="ID" />
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Amount" class="form-label"></label>
+        <input asp-for="Amount" class="form-control" type="number" step="0.01" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+
+</form>
