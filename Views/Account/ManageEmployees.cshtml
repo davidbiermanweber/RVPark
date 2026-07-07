@@ -33,6 +33,13 @@
                 </td>
                 <td>
                     <a asp-action="EditAccessLevel" asp-route-id="@emp.Id" class="btn btn-sm btn-primary">Edit Access</a>
+                    
+                    <form asp-action="DeleteEmployee" asp-route-id="@emp.Id" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" 
+                                onclick="return confirm('Are you sure you want to delete @emp.Name? This cannot be undone.');">
+                            Delete
+                        </button>
+                    </form>
                 </td>
             </tr>
         }
