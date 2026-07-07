@@ -31,4 +31,5 @@ public class AppDbContext : DbContext
         );
     }
     public DbSet<SitePhoto> SitePhotos {get; set;}
+    public DbSet<Fee> Fees { get; set; }
 }
