@@ -32,4 +32,5 @@ public class AppDbContext : DbContext
     }
     public DbSet<SitePhoto> SitePhotos {get; set;}
     public DbSet<Fee> Fees { get; set; }
+    public DbSet<Reservation> Reservations { get; set; }
 }

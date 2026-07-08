@@ -1,0 +1,97 @@
+@model RvParkApp.Models.ReservationReportViewModel
+
+@{
+ViewData["Title"] = "Reservation Report";
+}
+
+<h2>Reservation Report</h2>
+
+<form asp-action="Index" method="post">
+    <div class="row mb-3">
+
+
+    <div class="col-md-4">
+        <label class="form-label">Start Date</label>
+        <input type="date" name="startDate" class="form-control" required />
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">End Date</label>
+        <input type="date" name="endDate" class="form-control" required />
+    </div>
+
+    <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary">
+            Generate Report
+        </button>
+    </div>
+
+</div>
+```
+
+</form>
+
+@if (Model != null)
+{ <hr />
+
+
+<h3>Completed Reservations</h3>
+@ReportTable(Model.Completed)
+
+
+<h3>Reservations In Progress</h3>
+@ReportTable(Model.InProgress)
+
+
+<h3>Upcoming Reservations</h3>
+@ReportTable(Model.Upcoming)
+
+
+}
+
+@functions {
+
+
+public IHtmlContent ReportTable(List<RvParkApp.Models.Reservation> reservations)
+{
+    if (reservations == null || !reservations.Any())
+    {
+        return new HtmlString("<p>No reservations found.</p>");
+    }
+
+    var html = @"
+    <table class='table table-bordered'>
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>Finish Date</th>
+                <th>Total Cost</th>
+            </tr>
+        </thead>
+        <tbody>";
+
+    foreach (var reservation in reservations)
+    {
+        html += $@"
+        <tr>
+            <td>{reservation.User?.Name}</td>
+            <td>{reservation.User?.Email}</td>
+            <td>{reservation.User?.Phone}</td>
+            <td>{reservation.ReservationStatus}</td>
+            <td>{reservation.StartDate.ToShortDateString()}</td>
+            <td>{reservation.FinishDate.ToShortDateString()}</td>
+            <td>{reservation.TotalCost:C}</td>
+        </tr>";
+    }
+
+    html += "</tbody></table>";
+
+    return new HtmlString(html);
+}
+
+
+}
