@@ -13,9 +13,12 @@
         <input asp-for="Description" class="form-control"/>
     </div>
     <div class="mb-3">
-        <label asp-for="CategoryId" class="form-label">Category</label>
+        <label asp-for="CategoryId" class="form-label">Site Type</label>
         <select asp-for="CategoryId" class="form-control"
-            asp-items="@(ViewBag.Categories as SelectList)"></select>
+            asp-items="@(ViewBag.Categories as SelectList)">
+            <option value="">-- Select a site type --</option>
+        </select>
+        <span asp-validation-for="CategoryId" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-success">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>

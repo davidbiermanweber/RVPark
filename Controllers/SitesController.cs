@@ -27,7 +27,12 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Site site)
     {
-        if(!ModelState.IsValid) return View(site);
+        await ValidateSiteTypeAsync(site);
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name", site.CategoryId);
+            return View(site);
+        }
         _db.Sites.Add(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -45,10 +50,24 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Site site)
     {
-        if(!ModelState.IsValid) return View(site);
+        await ValidateSiteTypeAsync(site);
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name", site.CategoryId);
+            return View(site);
+        }
         _db.Sites.Update(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
+    }
+
+    // Every site must reference an existing site type.
+    private async Task ValidateSiteTypeAsync(Site site)
+    {
+        if (site.CategoryId <= 0 || !await _db.Categories.AnyAsync(c => c.Id == site.CategoryId))
+        {
+            ModelState.AddModelError(nameof(site.CategoryId), "Please select a site type.");
+        }
     }
 
     [HttpPost]
