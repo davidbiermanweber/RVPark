@@ -1,23 +1,21 @@
 @model IEnumerable<Category>
-@{ ViewData["Title"] = "Site Types"; }
+@{ ViewData["Title"] = "Categories"; }
 
-<h2>Site Types</h2>
-<a asp-action="Create" class="btn btn-primary mb-3">Add Site Type</a>
+<h2>Categories</h2>
+<a asp-action="Create" class="btn btn-primary mb-3">Add Category</a>
 
 <table class="table">
     <thead>
-        <tr><th>Name</th><th>Current Price</th><th></th></tr>
+        <tr><th>Name</th><th></th></tr>
     </thead>
     <tbody>
         @foreach (var category in Model)
         {
-            var currentPrice = category.Prices.FirstOrDefault(p => p.EndDate == null);
             <tr>
                 <td>@category.Name</td>
-                <td>@(currentPrice != null ? currentPrice.Price.ToString("C") : "—")</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@category.Id" class="btn btn-warning btn-sm">Edit &amp; Prices</a>
-                    <form asp-action="Delete" asp-route-id="@category.Id" method="post" onsubmit="return confirm('Delete this site type?');" style="display:inline;">
+                    <a asp-action="Edit" asp-route-id="@category.Id" class="btn btn-warning btn-sm">Edit</a>
+                    <form asp-action="Delete" asp-route-id="@category.Id" method="post" onsubmit="return confirm('Delete this category?');" style="display:inline;">
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>
                 </td>

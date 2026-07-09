@@ -1,5 +1,4 @@
-﻿// Added entire file, viable suspect for breaking the code.
-@model IEnumerable<Reservation>
+﻿@model IEnumerable<Reservation>
 @{
     ViewData["Title"] = "Master Reservation List";
 }
@@ -36,12 +35,36 @@
                     <td><strong>#@item.Id</strong></td>
                     <td>@item.User?.Name</td>
 
+                    <!-- 💡 Assigned Site Cell Lookup -->
                     <td>
-                        <span class="text-muted">Standard RV Site</span>
+                        @if (item.ReservationStatus.Contains(" - "))
+                        {
+                            <span class="fw-bold text-dark">⛺ @item.ReservationStatus.Split(" - ")[1]</span>
+                        }
+                        else if (item.ReservationStatus == "Cancelled")
+                        {
+                            <span class="text-muted">None (Cancelled)</span>
+                        }
+                        else
+                        {
+                            <span class="fw-bold text-dark">⛺ Standard RV Site</span>
+                        }
                     </td>
 
                     <td>@item.StartDate.ToString("MM/dd/yyyy") - @item.FinishDate.ToString("MM/dd/yyyy")</td>
-                    <td><span class="badge @(item.ReservationStatus == "Cancelled" ? "bg-danger" : "bg-success")">@item.ReservationStatus</span></td>
+
+                    <!-- 💡 Status Badge Cell Lookup -->
+                    <td>
+                        @if (item.ReservationStatus.Contains("Cancelled"))
+                        {
+                            <span class="badge bg-danger">Cancelled</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                    </td>
+
                     <td>$@item.TotalCost.ToString("F2")</td>
                     <td>
                         <a asp-action="EditReservation" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">⚙️ Edit</a>

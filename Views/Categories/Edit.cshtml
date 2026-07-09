@@ -1,103 +1,13 @@
 @model Category
-@{
-    ViewData["Title"] = "Edit Site Type";
-    var editPriceId = ViewBag.EditPriceId as int?;
-    var prices = Model.Prices.OrderBy(p => p.StartDate).ThenBy(p => p.EndDate).ToList();
-}
+@{ ViewData["Title"] = "Edit Category"; }
 
-<h2>Edit Site Type</h2>
-
-@if (TempData["PriceError"] != null)
-{
-    <div class="alert alert-danger">@TempData["PriceError"]</div>
-}
-
-<form asp-action="Edit" method="post" class="mb-4">
+<h2>Edit Category</h2>
+<form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
-        <label asp-for="Name" class="form-label">Name</label>
+        <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="Index" class="btn btn-secondary">Back to Site Types</a>
-</form>
-
-<h4>Price Ranges</h4>
-<table class="table align-middle">
-    <thead>
-        <tr><th>Start Date</th><th>End Date</th><th>Price</th><th></th></tr>
-    </thead>
-    <tbody>
-        @foreach (var price in prices)
-        {
-            @if (editPriceId == price.Id)
-            {
-                <tr>
-                    <td colspan="4">
-                        <form asp-controller="CategoryPrices" asp-action="Edit" method="post" class="row g-2 align-items-end">
-                            <input type="hidden" name="Id" value="@price.Id" />
-                            <input type="hidden" name="CategoryId" value="@Model.Id" />
-                            <div class="col-auto">
-                                <label class="form-label">Start Date</label>
-                                <input type="date" name="StartDate" value="@price.StartDate.ToString("yyyy-MM-dd")" class="form-control" required />
-                            </div>
-                            <div class="col-auto">
-                                <label class="form-label">End Date <span class="text-muted">(blank = current)</span></label>
-                                <input type="date" name="EndDate" value="@(price.EndDate?.ToString("yyyy-MM-dd"))" class="form-control" />
-                            </div>
-                            <div class="col-auto">
-                                <label class="form-label">Price</label>
-                                <input type="number" step="0.01" min="0" name="Price" value="@price.Price" class="form-control" required />
-                            </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-success">Update</button>
-                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">Cancel</a>
-                            </div>
-                        </form>
-                    </td>
-                </tr>
-            }
-            else
-            {
-                <tr>
-                    <td>@price.StartDate.ToString("yyyy-MM-dd")</td>
-                    <td>@(price.EndDate.HasValue ? price.EndDate.Value.ToString("yyyy-MM-dd") : "Current")</td>
-                    <td>@price.Price.ToString("C")</td>
-                    <td>
-                        <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-editPriceId="@price.Id" class="btn btn-warning btn-sm">Edit</a>
-                        <form asp-controller="CategoryPrices" asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirm('Delete this price?');">
-                            <input type="hidden" name="id" value="@price.Id" />
-                            <input type="hidden" name="categoryId" value="@Model.Id" />
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        }
-        @if (!prices.Any())
-        {
-            <tr><td colspan="4" class="text-muted">No price ranges yet.</td></tr>
-        }
-    </tbody>
-</table>
-
-<h5>Add Price Range</h5>
-<form asp-controller="CategoryPrices" asp-action="Create" method="post" class="row g-2 align-items-end">
-    <input type="hidden" name="CategoryId" value="@Model.Id" />
-    <div class="col-auto">
-        <label class="form-label">Start Date</label>
-        <input type="date" name="StartDate" class="form-control" required />
-    </div>
-    <div class="col-auto">
-        <label class="form-label">End Date <span class="text-muted">(blank = current)</span></label>
-        <input type="date" name="EndDate" class="form-control" />
-    </div>
-    <div class="col-auto">
-        <label class="form-label">Price</label>
-        <input type="number" step="0.01" min="0" name="Price" class="form-control" required />
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-success">Add Price</button>
-    </div>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>

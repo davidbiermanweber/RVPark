@@ -36,109 +36,6 @@ namespace RvParkApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "RV Site - Full Hookup (Water/Electric/Sewer)"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "RV Site - Water & Electric"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "RV Site - Electric Only"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Tent Site (No Hookups)"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Dry Storage"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Rental Trailer"
-                        });
-                });
-
-            modelBuilder.Entity("CategoryPrice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("CategoryPrices");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CategoryId = 1,
-                            Price = 50m,
-                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CategoryId = 2,
-                            Price = 40m,
-                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CategoryId = 3,
-                            Price = 30m,
-                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CategoryId = 4,
-                            Price = 20m,
-                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CategoryId = 5,
-                            Price = 15m,
-                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CategoryId = 6,
-                            Price = 75m,
-                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        });
                 });
 
             modelBuilder.Entity("Fee", b =>
@@ -346,17 +243,6 @@ namespace RvParkApp.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("CategoryPrice", b =>
-                {
-                    b.HasOne("Category", "Category")
-                        .WithMany("Prices")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-                });
-
             modelBuilder.Entity("Reservation", b =>
                 {
                     b.HasOne("User", "User")
@@ -407,11 +293,6 @@ namespace RvParkApp.Migrations
                         .IsRequired();
 
                     b.Navigation("Site");
-                });
-
-            modelBuilder.Entity("Category", b =>
-                {
-                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Fee", b =>

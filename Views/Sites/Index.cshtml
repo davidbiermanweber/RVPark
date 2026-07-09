@@ -8,8 +8,8 @@
     <thead>
         <tr>
             <th>Name</th>
-            <th>Description</th>
-            <th>Site Type</th>
+            <th>Desciption</th>
+            <th>Category</th>
             <th></th>
         </tr>
     </thead>
@@ -33,7 +33,7 @@
                         <td colspan="4">
                             @foreach (var photo in site.Photos)
                             {
-                                <img src="@photo.FileName" style="height:80px; width:120px; object-fit:cover; border-radius:4px;" />
+                                <img src="/images/sites/@photo.FileName" style="height:80px; width:120px; objec-fit:cover; border-radius:4px;" />
                             }
                         </td>
                     </tr>

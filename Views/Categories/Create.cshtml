@@ -1,13 +1,11 @@
 @model Category
-@{ ViewData["Title"] = "Add Site Type"; }
+@{ ViewData["Title"] = "Add Category"; }
 
-<h2>Add Site Type</h2>
-<p class="text-muted">Save the site type first, then add its price ranges on the edit page.</p>
+<h2>Add Category</h2>
 <form asp-action="Create" method="post">
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-success">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
