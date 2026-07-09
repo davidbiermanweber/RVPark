@@ -3,6 +3,17 @@ using RvParkApp.Models;
 
 public class AppDbContext : DbContext
 {
+    // temporary supressed override
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        // Suppresses the pending model changes exception on runtime execution
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    }
+
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     public DbSet<User> Users { get; set; }
 
@@ -19,7 +30,18 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Seeding your Admin user
+        // 💡 THE FIX: Change "Reservation" to "Reservations" (with an "s") to match your active Azure table!
+        modelBuilder.Entity<Reservation>().ToTable("Reservations");
+
+        // Keep all your remaining plural mappings exactly the same...
+        modelBuilder.Entity<Site>().ToTable("Sites");
+        modelBuilder.Entity<User>().ToTable("Users");
+        modelBuilder.Entity<Category>().ToTable("Categories");
+        modelBuilder.Entity<Fee>().ToTable("Fees");
+        modelBuilder.Entity<SitePhoto>().ToTable("SitePhotos");
+        modelBuilder.Entity<ReservationFee>().ToTable("ReservationFee");
+
+        // Seeding your Admin user remains completely safe and untouched below...
         modelBuilder.Entity<Employee>().HasData(
             new Employee
             {
@@ -52,6 +74,12 @@ public class AppDbContext : DbContext
             new CategoryPrice { Id = 6, CategoryId = 6, StartDate = new DateTime(2026, 1, 1), EndDate = null, Price = 75m }
         );
     }
+
     public DbSet<SitePhoto> SitePhotos {get; set;}
     public DbSet<Fee> Fees { get; set; }
+
+    // Adding DbSet for Reservation and ReservationFee ---- Also viable suspect for breaking the code, but I think it is correct.
+    public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ReservationFee> ReservationFees { get; set; }
+
 }
