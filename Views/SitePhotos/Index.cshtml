@@ -23,7 +23,8 @@
             <div class="card">
                 <img src="/images/sites/@photo.FileName" class="card-img-top" style="height:200px; object-fit:cover;" />
                 <div class="card-body p-2">
-                    <form aps-action="Delete" asp-route-id="@photo.Id" asp-route-siteId="@ViewBag.Site.Id" method="post" onsubmit="return confirm('Delete this photo?');">
+                    <form asp-action="Delete" asp-route-id="@photo.Id" asp-route-siteId="@ViewBag.Site.Id" method="post" onsubmit="return confirm('Delete this photo?');">
+                        @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-danger btn-sw w-100">Delete</button>
                     </form>
                 </div>
