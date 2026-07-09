@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 // Handles CRUD for a site type's dated prices.
 // All actions redirect back to the combined Site Type edit page.
+[AdminOnly] // Pricing maintenance is admin-only (AccessLevel 3)
 public class CategoryPricesController : Controller
 {
     private readonly AppDbContext _db;

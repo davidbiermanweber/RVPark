@@ -3,6 +3,7 @@ using System.Net.NetworkInformation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+[AdminOnly] // Site type + pricing maintenance is admin-only (AccessLevel 3)
 public class CategoriesController : Controller
 {
     private readonly AppDbContext _db;
