@@ -47,8 +47,7 @@ public class FeeController : Controller
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+
     public async Task<IActionResult> Delete(int id)
     {
         var fee = await _context.Fees.FindAsync(id);
