@@ -55,9 +55,6 @@ public class AppDbContext : DbContext
 
     public DbSet<SitePhoto> SitePhotos {get; set;}
     public DbSet<Fee> Fees { get; set; }
-
-    // Adding DbSet for Reservation and ReservationFee ---- Also viable suspect for breaking the code, but I think it is correct.
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationFee> ReservationFees { get; set; }
-
 }

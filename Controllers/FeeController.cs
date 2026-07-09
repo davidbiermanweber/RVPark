@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+[AdminOnly]
 public class FeeController : Controller
 {
     private readonly AppDbContext _context;
@@ -21,6 +21,7 @@ public class FeeController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Fee fee)
     {
         if (ModelState.IsValid)
@@ -39,6 +40,7 @@ public class FeeController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Fee fee)
     {
         _context.Update(fee);

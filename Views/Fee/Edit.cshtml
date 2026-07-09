@@ -4,7 +4,7 @@
 <h2>Edit Fee</h2>
 
 <form asp-action="Edit" method="post">
-
+    @Html.AntiForgeryToken()
     <input type="hidden" asp-for="ID" />
 
     <div class="mb-3">
