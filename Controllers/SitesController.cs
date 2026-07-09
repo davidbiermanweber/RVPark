@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
+[AdminOnly] // Site + reservation maintenance is admin-only (AccessLevel 3)
 public class SitesController : Controller
 {
     private readonly AppDbContext _db;

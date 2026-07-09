@@ -57,7 +57,6 @@ public class AppDbContext : DbContext
     public DbSet<Fee> Fees { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationFee> ReservationFees { get; set; }
-
     public DbSet<CategoryPrice> CategoryPrices { get; set; }
 
 }
