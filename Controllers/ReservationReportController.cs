@@ -21,12 +21,13 @@ public class ReservationReportController : Controller
     [HttpPost]
     public async Task<IActionResult> Index(DateTime startDate, DateTime endDate)
     {
-        var reservations = await _context.Reservations
-            .Include(r => r.User)
-            .Where(r => r.StartDate <= endDate &&
-                        r.FinishDate >= startDate)
-            .ToListAsync();
+       var today = DateTime.Today;
 
+       var reservations = await _context.Reservations
+        .Include(r => r.User)
+        .Where(r => r.StartDate <= endDate &&
+                    r.FinishDate >= startDate)
+        .ToListAsync();
 
         var model = new ReservationReportViewModel
         {
@@ -34,19 +35,28 @@ public class ReservationReportController : Controller
             EndDate = endDate,
 
             Completed = reservations
-                .Where(r => r.ReservationStatus == "Completed")
+                .Where(r => r.FinishDate < today &&
+                            r.ReservationStatus != "Cancelled")
+                .OrderBy(r => r.FinishDate)
                 .ToList(),
 
             InProgress = reservations
-                .Where(r => r.ReservationStatus == "In Progress")
+                .Where(r => r.StartDate <= today &&
+                            r.FinishDate >= today &&
+                            r.ReservationStatus == "Active")
+                .OrderBy(r => r.StartDate)
                 .ToList(),
 
             Upcoming = reservations
-                .Where(r => r.ReservationStatus == "Upcoming")
+                .Where(r => r.StartDate > today &&
+                            r.ReservationStatus == "Active")
+                .OrderBy(r => r.StartDate)
                 .ToList()
         };
 
-
         return View(model);
+
+
+        
     }
 }
