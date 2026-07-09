@@ -1,0 +1,53 @@
+﻿// Added entire file, viable suspect for breaking the code.
+@model IEnumerable<Reservation>
+@{
+    ViewData["Title"] = "Master Reservation List";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">📋 Reservation Central Administration</h2>
+
+    <!-- Search inputs satisfying requirements -->
+    <form method="get" asp-action="ManageReservations" class="row g-2 mb-4">
+        <div class="col-md-9">
+            <input type="text" name="searchString" value="@ViewBag.SearchString" class="form-control" placeholder="Search by reservation number or customer details..." />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">🔍 Filter</button>
+        </div>
+    </form>
+
+    <table class="table table-hover border">
+        <thead class="table-dark">
+            <tr>
+                <th>Res ID</th>
+                <th>Customer Name</th>
+                <th>Assigned Site</th>
+                <th>Timeline Dates</th>
+                <th>Status</th>
+                <th>Total Value</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td><strong>#@item.Id</strong></td>
+                    <td>@item.User?.Name</td>
+
+                    <td>
+                        <span class="text-muted">Standard RV Site</span>
+                    </td>
+
+                    <td>@item.StartDate.ToString("MM/dd/yyyy") - @item.FinishDate.ToString("MM/dd/yyyy")</td>
+                    <td><span class="badge @(item.ReservationStatus == "Cancelled" ? "bg-danger" : "bg-success")">@item.ReservationStatus</span></td>
+                    <td>$@item.TotalCost.ToString("F2")</td>
+                    <td>
+                        <a asp-action="EditReservation" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">⚙️ Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
