@@ -44,8 +44,24 @@
                                 </svg>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="employeeDropdown">
-                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Login">Employee Login</a></li>
-                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register Employee</a></li>
+                                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                                {
+                                    var displayName = User.FindFirst("Name")?.Value ?? User.Identity.Name;
+                                    <li><span class="dropdown-item-text text-muted small">Signed in as <strong>@displayName</strong></span></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register Employee</a></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item">Logout</button>
+                                        </form>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Login">Employee Login</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register Employee</a></li>
+                                }
                             </ul>
                         </li>
                     </ul>
