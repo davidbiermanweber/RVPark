@@ -1,3 +1,4 @@
+
 public class Reservation
 {
     public int Id { get; set; }
@@ -23,4 +24,7 @@ public class Reservation
 
     // Fees (you already have this concept)
     public ICollection<ReservationFee>? ReservationFees { get; set; }
+
+
+
 }

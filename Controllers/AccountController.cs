@@ -125,36 +125,6 @@ namespace RvParkApp.Controllers
             return RedirectToAction("ManageEmployees");
         }
 
-        // POST: /Account/DeleteEmployee
-        [HttpPost]
-        [Authorize]
-        public IActionResult DeleteEmployee(int id)
-        {
-            // Security Check: Kick them out if they aren't Level 3
-            if (User.FindFirst("AccessLevel")?.Value != "3")
-            {
-                return Forbid();
-            }
-
-            var employee = _db.Employees.Find(id);
-            
-            // Prevent the admin from deleting themselves!
-            var currentUsername = User.Identity?.Name;
-            if (employee != null && employee.Username == currentUsername)
-            {
-                // Optional: You could pass an error message back to the view here
-                return RedirectToAction("ManageEmployees"); 
-            }
-
-            if (employee != null)
-            {
-                _db.Employees.Remove(employee);
-                _db.SaveChanges();
-            }
-            
-            return RedirectToAction("ManageEmployees");
-        }
-
 
     }
     
