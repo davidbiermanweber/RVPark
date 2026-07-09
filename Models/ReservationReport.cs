@@ -6,10 +6,10 @@ namespace RvParkApp.Models
 
         public DateTime EndDate { get; set; }
 
-        public List<Reservation> Completed { get; set; }
+        public List<Reservation> Completed { get; set; } = new();
 
-        public List<Reservation> InProgress { get; set; }
+        public List<Reservation> InProgress { get; set; } = new();
 
-        public List<Reservation> Upcoming { get; set; }
+        public List<Reservation> Upcoming { get; set; } = new();
     }
 }
