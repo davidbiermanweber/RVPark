@@ -54,7 +54,8 @@ public class SitePhotosController : Controller
         var photo = await _db.SitePhotos.FindAsync(id);
         if (photo != null)
         {
-            var blobClient = new BlobClient(new Uri(photo.FileName));
+            var blobName = Path.GetFileName(new Uri(photo.FileName).LocalPath);
+            var blobClient = _container.GetBlobClient(blobName);
             await blobClient.DeleteIfExistsAsync();
 
             _db.SitePhotos.Remove(photo);
