@@ -14,7 +14,8 @@
 
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-        <form method="post">
+        <!-- 💡 Fix: Explicitly declare the routing controller, action method, and reservation key ID -->
+        <form method="post" asp-controller="Sites" asp-action="EditReservation" asp-route-id="@Model.Id">
             @Html.AntiForgeryToken()
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -37,11 +38,25 @@
                         </option>
                     }
                 </select>
+                <label class="form-label fw-bold">Update Campground Site Operational Status</label>
+                <select name="siteStatus" class="form-select">
+                    <option value="Available">🟢 Available for Booking</option>
+                    <option value="Unavailable">🔴 Unavailable / Closed</option>
+                    <option value="Maintenance">🟡 Under Active Maintenance</option>
+                </select>
             </div>
 
             <div class="d-flex gap-2">
-                <button type="submit" name="statusAction" value="Update" class="btn btn-success flex-grow-1 py-2 fw-bold">💾 Save Modifications</button>
-                <button type="submit" name="statusAction" value="Cancel" class="btn btn-danger py-2 px-4 fw-bold" onclick="return confirm('Cancel this reservation?')">❌ Cancel Booking</button>
+                @if (Model.ReservationStatus == "Cancelled")
+                {
+                    <button type="submit" name="statusAction" value="UnCancel" class="btn btn-info flex-grow-1 py-2 fw-bold text-white">🔄 Activate & Un-Cancel Booking</button>
+                }
+                else
+                {
+                    <button type="submit" name="statusAction" value="Update" class="btn btn-success flex-grow-1 py-2 fw-bold">💾 Save Modifications</button>
+                    <button type="submit" name="statusAction" value="Cancel" class="btn btn-danger py-2 px-4 fw-bold" onclick="return confirm('Cancel this reservation?')">❌ Cancel Booking</button>
+                }
+                <!-- 💡 Fix: Removed duplicate stray buttons from this section -->
             </div>
         </form>
 

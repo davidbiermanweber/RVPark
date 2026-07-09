@@ -28,12 +28,7 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Site site)
     {
-        await ValidateSiteTypeAsync(site);
-        if (!ModelState.IsValid)
-        {
-            ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name", site.CategoryId);
-            return View(site);
-        }
+        if(!ModelState.IsValid) return View(site);
         _db.Sites.Add(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -51,24 +46,10 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Site site)
     {
-        await ValidateSiteTypeAsync(site);
-        if (!ModelState.IsValid)
-        {
-            ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name", site.CategoryId);
-            return View(site);
-        }
+        if(!ModelState.IsValid) return View(site);
         _db.Sites.Update(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
-    }
-
-    // Every site must reference an existing site type.
-    private async Task ValidateSiteTypeAsync(Site site)
-    {
-        if (site.CategoryId <= 0 || !await _db.Categories.AnyAsync(c => c.Id == site.CategoryId))
-        {
-            ModelState.AddModelError(nameof(site.CategoryId), "Please select a site type.");
-        }
     }
 
     [HttpPost]
@@ -88,11 +69,12 @@ public class SitesController : Controller
     // ⚙️ ADDITION: Step 5 - Edit Existing Reservations Admin Actions (Fixed)
     // =========================================================================
 
-    // 1. Master List & Search Panel
+    // 1. Master List & Search Panel (Updated to load relational data collections)
     public async Task<IActionResult> ManageReservations(string searchString)
     {
         var query = _db.Reservations
             .Include(r => r.User)
+            .Include(r => r.ReservationFees) // 💡 FIX: Force EF Core to pull down the fee data collection so it's not null in HTML
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(searchString))
@@ -104,7 +86,7 @@ public class SitesController : Controller
 
         ViewBag.SearchString = searchString;
 
-        // Maps available site text in-memory for the view layout grid
+        // Maps available site text in-memory for the view layout grid lookup
         ViewBag.SitesMap = await _db.Sites.ToDictionaryAsync(s => s.Id, s => s.Name);
 
         return View(await query.ToListAsync());
@@ -116,6 +98,7 @@ public class SitesController : Controller
     {
         var reservation = await _db.Reservations
             .Include(r => r.User)
+            .Include(r => r.ReservationFees)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (reservation == null) return NotFound();
@@ -126,17 +109,21 @@ public class SitesController : Controller
         return View(reservation);
     }
 
-    // 3. Process Live Pricing Shifts, Cancel, & Virtual Availability Validation
+    // 3. Process Live Pricing Shifts, Cancel, & Save Selected Site Values
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction)
+    public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction, string siteStatus)
     {
-        var res = await _db.Reservations.Include(r => r.User).FirstOrDefaultAsync(r => r.Id == id);
+        var res = await _db.Reservations
+            .Include(r => r.User)
+            .Include(r => r.ReservationFees)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
         if (res == null) return NotFound();
 
         ViewBag.AllSites = await _db.Sites.ToListAsync();
 
-        // Handle Cancellation Request Requirements Instantly
+        // Handle Status Actions
         if (statusAction == "Cancel")
         {
             res.ReservationStatus = "Cancelled";
@@ -146,20 +133,79 @@ public class SitesController : Controller
             return RedirectToAction(nameof(ManageReservations));
         }
 
-        // 💡 FIX: Check site availability constraints cleanly by looking up matching date overlaps
-        bool isConflict = await _db.Reservations.AnyAsync(r =>
-            r.Id != id &&
-            r.ReservationStatus != "Cancelled" &&
-            r.StartDate < finishDate &&
-            r.FinishDate > startDate);
-
-        if (isConflict)
+        if (statusAction == "UnCancel")
         {
-            ModelState.AddModelError("", "The newly selected campsite dates conflict with an existing active timeline placement.");
+            res.ReservationStatus = "Active";
+            res.RefundedAmount = 0m;
+
+            bool isReactivationConflict = await _db.Reservations.AnyAsync(r =>
+                r.Id != id &&
+                r.ReservationStatus != "Cancelled" &&
+                r.StartDate < res.FinishDate &&
+                r.FinishDate > res.StartDate);
+
+            if (isReactivationConflict)
+            {
+                ModelState.AddModelError("", "Cannot un-cancel: This time block has been booked by another customer reservation.");
+                return View(res);
+            }
+
+            _db.Reservations.Update(res);
+            await _db.SaveChangesAsync();
+
+            ViewBag.BalanceMessage = "Reservation successfully reactivated to Active status metrics.";
             return View(res);
         }
 
-        // Fulfill Step 5 delta requirement: calculate balance differences instead of processing Stripe
+        // 💡 ZERO-RISK FIX: Save the assigned site name directly to the reservation record
+        var targetSite = await _db.Sites.FirstOrDefaultAsync(s => s.Id == siteId);
+        string siteLabel = targetSite != null ? targetSite.Name : $"Site #{siteId}";
+
+        // Append the site name cleanly right onto your status tracker variable string
+        res.ReservationStatus = $"Active - {siteLabel}";
+
+        if (statusAction == "Cancel")
+        {
+            res.ReservationStatus = "Cancelled";
+            res.RefundedAmount = res.TotalCost;
+            _db.Reservations.Update(res);
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(ManageReservations));
+        }
+
+        if (statusAction == "UnCancel")
+        {
+            res.ReservationStatus = $"Active - {siteLabel}";
+            res.RefundedAmount = 0m;
+
+            bool isReactivationConflict = await _db.Reservations.AnyAsync(r =>
+                r.Id != id &&
+                !r.ReservationStatus.Contains("Cancelled") &&
+                r.StartDate < res.FinishDate &&
+                r.FinishDate > res.StartDate);
+
+            if (isReactivationConflict)
+            {
+                ModelState.AddModelError("", "Cannot un-cancel: This time block has been booked by another customer reservation.");
+                return View(res);
+            }
+
+            _db.Reservations.Update(res);
+            await _db.SaveChangesAsync();
+
+            ViewBag.BalanceMessage = "Reservation successfully reactivated to Active status metrics.";
+            return View(res);
+        }
+
+        // Update the selected physical site's operational status metrics
+        var selectedSite = await _db.Sites.FirstOrDefaultAsync(s => s.Id == siteId);
+        if (selectedSite != null && !string.IsNullOrEmpty(siteStatus))
+        {
+            selectedSite.Description = siteStatus;
+            _db.Sites.Update(selectedSite);
+        }
+
+        // Fulfill Step 5 delta requirement: calculate balance differences
         int originalNights = (res.FinishDate - res.StartDate).Days;
         int newNights = (finishDate - startDate).Days;
 
@@ -173,7 +219,6 @@ public class SitesController : Controller
         decimal newCalculatedCost = newNights * res.DailyRate;
         decimal deltaBalance = newCalculatedCost - originalCalculatedCost;
 
-        // Apply tracking property updates to valid existing object context variables
         res.StartDate = startDate;
         res.FinishDate = finishDate;
         res.TotalCost = newCalculatedCost;
@@ -181,10 +226,15 @@ public class SitesController : Controller
         _db.Reservations.Update(res);
         await _db.SaveChangesAsync();
 
+        ViewBag.AllSites = await _db.Sites.ToListAsync();
+        ViewBag.SitesMap = await _db.Sites.ToDictionaryAsync(s => s.Id, s => s.Name);
+
         ViewBag.BalanceMessage = deltaBalance > 0
-            ? $"Changes applied successfully. Additional Payment Required: ${deltaBalance:F2}"
-            : $"Changes applied successfully. Refund Calculated: ${Math.Abs(deltaBalance):F2}";
+            ? $"Changes applied successfully. Additional Payment Required: ${deltaBalance:F2}. Site operational status updated."
+            : $"Changes applied successfully. Refund Calculated: ${Math.Abs(deltaBalance):F2}. Site operational status updated.";
 
         return View(res);
     }
+
+
 }

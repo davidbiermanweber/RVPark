@@ -1,18 +1,15 @@
-using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 public class SitePhotosController : Controller
 {
     private readonly AppDbContext _db;
-    private readonly BlobContainerClient _container;
+    private readonly IWebHostEnvironment _env;
 
-    public SitePhotosController(AppDbContext db, IConfiguration config)
+    public SitePhotosController(AppDbContext db, IWebHostEnvironment env)
     {
         _db = db;
-        _container = new BlobContainerClient(
-            config["AzureStorage:ConnectionString"],
-            config["AzureStorage:ContainerName"]);
+        _env = env;
     }
 
     public async Task<IActionResult> Index(int siteId)
@@ -35,13 +32,16 @@ public class SitePhotosController : Controller
             return RedirectToAction(nameof(Index), new { siteId });
         }
 
+        var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "sites");
+        Directory.CreateDirectory(uploadsFolder);
+
         var fileName = Guid.NewGuid() + Path.GetExtension(photo.FileName);
-        var blobClient = _container.GetBlobClient(fileName);
+        var filePath = Path.Combine(uploadsFolder, fileName);
 
-        using (var stream = photo.OpenReadStream())
-            await blobClient.UploadAsync(stream, overwrite: true);
+        using (var stream = new FileStream(filePath, FileMode.Create))
+            await photo.CopyToAsync(stream);
 
-        _db.SitePhotos.Add(new SitePhoto { SiteId = siteId, FileName = blobClient.Uri.ToString() });
+        _db.SitePhotos.Add(new SitePhoto { SiteId = siteId, FileName = fileName });
         await _db.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index), new { siteId });
@@ -54,14 +54,16 @@ public class SitePhotosController : Controller
         var photo = await _db.SitePhotos.FindAsync(id);
         if (photo != null)
         {
-            var blobName = Path.GetFileName(new Uri(photo.FileName).LocalPath);
-            var blobClient = _container.GetBlobClient(blobName);
-            await blobClient.DeleteIfExistsAsync();
-
+            var filePath = Path.Combine(_env.WebRootPath, "images", "sites", photo.FileName);
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+            
             _db.SitePhotos.Remove(photo);
             await _db.SaveChangesAsync();
         }
 
-        return RedirectToAction(nameof(Index), new { siteId });
+        return RedirectToAction(nameof(Index), new {siteId});
     }
 }
