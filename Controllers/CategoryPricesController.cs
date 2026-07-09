@@ -9,36 +9,39 @@ public class CategoryPricesController : Controller
 
     public CategoryPricesController(AppDbContext db) => _db = db;
 
+    // NOTE: the parameter is named 'categoryPrice', NOT 'price'. A parameter named
+    // 'price' collides with the posted 'Price' field: the binder treats 'price' as a
+    // prefix, so the bare form fields (CategoryId, StartDate, ...) fail to bind.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CategoryPrice price)
+    public async Task<IActionResult> Create(CategoryPrice categoryPrice)
     {
         if (ModelState.IsValid)
         {
-            _db.CategoryPrices.Add(price);
+            _db.CategoryPrices.Add(categoryPrice);
             await _db.SaveChangesAsync();
         }
         else
         {
             TempData["PriceError"] = "Could not add the price. Check the values and try again.";
         }
-        return RedirectToAction("Edit", "Categories", new { id = price.CategoryId });
+        return RedirectToAction("Edit", "Categories", new { id = categoryPrice.CategoryId });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(CategoryPrice price)
+    public async Task<IActionResult> Edit(CategoryPrice categoryPrice)
     {
         if (ModelState.IsValid)
         {
-            _db.CategoryPrices.Update(price);
+            _db.CategoryPrices.Update(categoryPrice);
             await _db.SaveChangesAsync();
         }
         else
         {
             TempData["PriceError"] = "Could not update the price. Check the values and try again.";
         }
-        return RedirectToAction("Edit", "Categories", new { id = price.CategoryId });
+        return RedirectToAction("Edit", "Categories", new { id = categoryPrice.CategoryId });
     }
 
     [HttpPost]
