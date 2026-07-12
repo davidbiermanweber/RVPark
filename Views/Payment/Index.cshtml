@@ -1,0 +1,114 @@
+@{ ViewData["Title"] = "Payment"; }
+
+<h2>New Order & Payment</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+
+        <div class="mb-3">
+            <label class="form-label">Customer ID</label>
+            <input type="number" id="customerId" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Site ID</label>
+            <input type="number" id="siteId" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Check-In Date</label>
+            <input type="date" id="checkIn" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Check-Out Date</label>
+            <input type="date" id="checkOut" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea id="notes" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Total Amount (USD)</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" id="amount" step="0.01" min="0.01" class="form-control" placeholder="0.00" />
+            </div>
+        </div>
+
+        <div id="payment-element" class="mb-3"></div>
+        <div id="payment-message" class="alert alert-danger d-none"></div>
+
+        <button id="pay-button" class="btn btn-success w-100">Proceed to Payment</button>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe('@ViewBag.PublishableKey');
+    let cardElement;
+    let clientSecret;
+
+    document.getElementById('pay-button').addEventListener('click', async () => {
+        const amount = parseFloat(document.getElementById('amount').value);
+        if (!amount || amount <= 0) { showMessage('Please enter a valid amount.'); return; }
+        if (!document.getElementById('customerId').value) { showMessage('Please enter a Customer ID.'); return; }
+        if (!document.getElementById('siteId').value) { showMessage('Please enter a Site ID.'); return; }
+        if (!document.getElementById('checkIn').value) { showMessage('Please enter a Check-In date.'); return; }
+        if (!document.getElementById('checkOut').value) { showMessage('Please enter a Check-Out date.'); return; }
+
+        document.getElementById('pay-button').disabled = true;
+
+        const response = await fetch('/Payment/CreatePaymentIntent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount })
+        });
+
+        const data = await response.json();
+        clientSecret = data.clientSecret;
+
+        const elements = stripe.elements();
+        cardElement = elements.create('card', { style: { base: { fontSize: '16px' } } });
+        cardElement.mount('#payment-element');
+
+        document.getElementById('pay-button').textContent = 'Confirm Payment';
+        document.getElementById('pay-button').onclick = confirmPayment;
+        document.getElementById('pay-button').disabled = false;
+    });
+
+    async function confirmPayment() {
+        document.getElementById('pay-button').disabled = true;
+
+        const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: { card: cardElement }
+        });
+
+        if (error) {
+            showMessage(error.message);
+            document.getElementById('pay-button').disabled = false;
+            return;
+        }
+
+        await fetch('/Payment/SaveOrder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customerId: parseInt(document.getElementById('customerId').value),
+                siteId: parseInt(document.getElementById('siteId').value),
+                checkIn: document.getElementById('checkIn').value,
+                checkOut: document.getElementById('checkOut').value,
+                notes: document.getElementById('notes').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                paymentToken: paymentIntent.id
+            })
+        });
+
+        window.location.href = '/Payment/Success';
+    }
+
+    function showMessage(msg) {
+        const el = document.getElementById('payment-message');
+        el.textContent = msg;
+        el.classList.remove('d-none');
+    }
+</script>
+}

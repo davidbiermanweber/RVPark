@@ -21,8 +21,10 @@ public class AppDbContext : DbContext
 
     public DbSet<Site> Sites {get; set;}
 
-
     public DbSet<Employee> Employees { get; set; }
+
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderPayment> OrderPayments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
