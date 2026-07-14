@@ -7,6 +7,13 @@ public class Reservation
     public int UserId { get; set; }
     public User User { get; set; }
 
+    // FK → Site. The physical site this reservation holds. Previously the assigned
+    // site was faked into the ReservationStatus string; this makes it queryable so
+    // availability and double-booking checks work (SYS3). Nullable so legacy
+    // reservations (which never had a real site link) don't violate the FK.
+    public int? SiteId { get; set; }
+    public Site? Site { get; set; }
+
     // FK → Status lookup table (recommended)
     public string ReservationStatus {get;set;}
 

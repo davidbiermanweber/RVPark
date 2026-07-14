@@ -35,27 +35,23 @@
                     <td><strong>#@item.Id</strong></td>
                     <td>@item.User?.Name</td>
 
-                    <!-- 💡 Assigned Site Cell Lookup -->
+                    <!-- Assigned site via the real Site FK -->
                     <td>
-                        @if (item.ReservationStatus.Contains(" - "))
+                        @if (item.Site != null)
                         {
-                            <span class="fw-bold text-dark">⛺ @item.ReservationStatus.Split(" - ")[1]</span>
-                        }
-                        else if (item.ReservationStatus == "Cancelled")
-                        {
-                            <span class="text-muted">None (Cancelled)</span>
+                            <span class="fw-bold text-dark">⛺ @item.Site.Name</span>
                         }
                         else
                         {
-                            <span class="fw-bold text-dark">⛺ Standard RV Site</span>
+                            <span class="text-muted">Unassigned</span>
                         }
                     </td>
 
                     <td>@item.StartDate.ToString("MM/dd/yyyy") - @item.FinishDate.ToString("MM/dd/yyyy")</td>
 
-                    <!-- 💡 Status Badge Cell Lookup -->
+                    <!-- Status badge -->
                     <td>
-                        @if (item.ReservationStatus.Contains("Cancelled"))
+                        @if (item.ReservationStatus != null && item.ReservationStatus.Contains("Cancelled"))
                         {
                             <span class="badge bg-danger">Cancelled</span>
                         }

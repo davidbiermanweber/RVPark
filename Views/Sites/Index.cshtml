@@ -3,13 +3,17 @@
 
 <h2>Sites</h2>
 <a asp-action="Create" class="btn btn-primary mb-3">Add Site</a>
+<a asp-action="Availability" class="btn btn-outline-primary mb-3">📅 Availability Grid</a>
+<a asp-action="ManageReservations" class="btn btn-outline-secondary mb-3">📋 Reservations</a>
 
 <table class="table">
     <thead>
         <tr>
             <th>Name</th>
-            <th>Desciption</th>
+            <th>Description</th>
             <th>Category</th>
+            <th>Max RV (ft)</th>
+            <th>Active</th>
             <th></th>
         </tr>
     </thead>
@@ -20,8 +24,20 @@
                 <td>@site.Name</td>
                 <td>@site.Description</td>
                 <td>@site.Category?.Name</td>
+                <td>@(site.MaxRvLength == 0 ? "—" : site.MaxRvLength.ToString())</td>
+                <td>
+                    @if (site.IsActive)
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactive</span>
+                    }
+                </td>
                 <td>
                     <a asp-controller="SitePhotos" asp-action="Index" asp-route-siteId="@site.Id" class="btn btn-info btn-sm me-2">Photos</a>
+                    <a asp-action="Blocks" asp-route-siteId="@site.Id" class="btn btn-warning btn-sm me-2">Blocks</a>
                     <a asp-action="Edit" asp-route-id="@site.Id" class="btn btn-warning btn-sm me-2">Edit</a>
                     <form asp-action="Delete" asp-route-id="@site.Id" method="post" onsubmit="return confirm('Delete this site?');" style="display:inline;">
                         <button type="submit" class="btn btn-danger btn-small">Delete</button>
@@ -30,7 +46,7 @@
                 @if (site.Photos.Any())
                 {
                     <tr>
-                        <td colspan="4">
+                        <td colspan="6">
                             @foreach (var photo in site.Photos)
                             {
                                 <img src="@photo.FileName" style="height:80px; width:120px; object-fit:cover; border-radius:4px;" />

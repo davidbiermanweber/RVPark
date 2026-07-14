@@ -1,0 +1,74 @@
+@model AvailabilityGridViewModel
+@{
+    ViewData["Title"] = "Availability Grid";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-3">📅 Site Availability</h2>
+
+    <form method="get" asp-action="Availability" class="row g-2 mb-3 align-items-end" style="max-width: 560px;">
+        <div class="col-auto">
+            <label class="form-label">Start date</label>
+            <input type="date" name="start" value="@Model.StartDate.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-auto">
+            <label class="form-label">Days</label>
+            <input type="number" name="days" value="@Model.Days" min="1" max="60" class="form-control" style="width: 90px;" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Show</button>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">Sites</a>
+        </div>
+    </form>
+
+    <div class="mb-2">
+        <span class="badge" style="background:#198754;">Open</span>
+        <span class="badge" style="background:#dc3545;">Reserved</span>
+        <span class="badge" style="background:#ffc107; color:#000;">Blocked</span>
+        <span class="badge" style="background:#6c757d;">Inactive</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered align-middle" style="min-width: 700px;">
+            <thead class="table-dark">
+                <tr>
+                    <th style="position: sticky; left: 0; background:#212529;">Site</th>
+                    @foreach (var d in Model.Dates)
+                    {
+                        <th class="text-center" style="font-size: 0.75rem; white-space: nowrap;">
+                            @d.ToString("ddd")<br />@d.ToString("M/d")
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Sites.Any())
+                {
+                    <tr><td colspan="@(Model.Dates.Count + 1)" class="text-center text-muted">No sites defined.</td></tr>
+                }
+                @foreach (var site in Model.Sites)
+                {
+                    <tr>
+                        <td style="position: sticky; left: 0; background:#fff; white-space: nowrap;">
+                            <strong>@site.Name</strong>
+                            <span class="text-muted small">@site.Category</span>
+                        </td>
+                        @foreach (var cell in site.Cells)
+                        {
+                            var color = cell switch
+                            {
+                                "reserved" => "#dc3545",
+                                "blocked" => "#ffc107",
+                                "inactive" => "#6c757d",
+                                _ => "#198754"
+                            };
+                            <td class="text-center" style="background:@color; min-width: 34px;" title="@cell"></td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
