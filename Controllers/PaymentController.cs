@@ -6,10 +6,13 @@ public class PaymentController : Controller
     private readonly IConfiguration _config;
     private readonly AppDbContext _db;
 
-    public PaymentController(IConfiguration config, AppDbContext db)
+    private readonly EmailService _email;
+
+    public PaymentController(IConfiguration config, AppDbContext db, EmailService email)
     {
         _config = config;
         _db = db;
+        _email = email;
     }
 
     public IActionResult Index()
@@ -61,6 +64,9 @@ public async Task<IActionResult> SaveOrder([FromBody] SaveOrderRequest request)
     });
     await _db.SaveChangesAsync();
 
+    if (!string.IsNullOrEmpty(request.CustomerEmail))
+    await _email.SendOrderConfirmationAsync(request.CustomerEmail, order.Id, order.Amount);
+
     return Json(new { success = true });
 }
 
@@ -80,4 +86,5 @@ public class SaveOrderRequest
     public string Notes { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string PaymentToken { get; set; } = string.Empty;
+    public string CustomerEmail {get; set;} = string.Empty;
 }
