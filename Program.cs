@@ -8,10 +8,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        // Azure SQL (serverless) can briefly pause/throttle; retry transient failures
+        // instead of surfacing 500s to users (NFR-6/NFR-7).
+        sql => sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null)));
 
 // Shared availability logic used by customer browse and admin availability views.
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+
+// Password hashing (NFR-3) and dev email delivery for account verification (G1).
+builder.Services.AddSingleton<IPasswordService, PasswordService>();
+builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
 
 
 //  Configures Cookie Authentication

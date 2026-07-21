@@ -10,10 +10,12 @@ namespace RvParkApp.Controllers
     public class AccountController : Controller
     {
         private readonly AppDbContext _db;
+        private readonly IPasswordService _passwords;
 
-        public AccountController(AppDbContext db)
+        public AccountController(AppDbContext db, IPasswordService passwords)
         {
             _db = db;
+            _passwords = passwords;
         }
 
         // GET: /Account/Register
@@ -39,16 +41,25 @@ namespace RvParkApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
-            var user = _db.Employees.FirstOrDefault(u => u.Username == username && u.Password == password);
+            var user = _db.Employees.FirstOrDefault(u => u.Username == username);
 
-            if (user != null)
+            // Verify against the (possibly legacy-plaintext) stored password. On success
+            // with a legacy value, rehash it now so plaintext is retired on next login.
+            if (user != null && _passwords.Verify(user.Password, password, out bool needsUpgrade))
             {
+                if (needsUpgrade)
+                {
+                    user.Password = _passwords.Hash(password);
+                    await _db.SaveChangesAsync();
+                }
+
                 // Create the user's "Identity" (their claims/data saved in the cookie)
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim("AccessLevel", user.AccessLevel.ToString()),
-                    new Claim("Name", user.Name ?? "Employee")
+                    new Claim("Name", user.Name ?? "Employee"),
+                    new Claim("Role", "Employee")
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
