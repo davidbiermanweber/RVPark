@@ -1,0 +1,113 @@
+@model Reservation
+
+@{
+    ViewData["Title"] = "Reservation Details";
+}
+
+<h2 class="mb-4">
+    Reservation Details
+</h2>
+
+<div class="card shadow-sm">
+
+    <div class="card-header">
+
+        <strong>
+            Reservation #@Model.Id
+        </strong>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <h5>Customer</h5>
+
+                <p>
+                    <strong>Name:</strong>
+                    @Model.User?.Name
+                </p>
+
+                <p>
+                    <strong>Email:</strong>
+                    @Model.User?.Email
+                </p>
+
+                <p>
+                    <strong>Phone:</strong>
+                    @Model.User?.Phone
+                </p>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <h5>Reservation</h5>
+
+                <p>
+                    <strong>Site:</strong>
+                    @(Model.Site?.Name ?? "Not Assigned")
+                </p>
+
+                <p>
+                    <strong>Arrival:</strong>
+                    @Model.StartDate.ToShortDateString()
+                </p>
+
+                <p>
+                    <strong>Departure:</strong>
+                    @Model.FinishDate.ToShortDateString()
+                </p>
+
+                <p>
+                    <strong>RV Length:</strong>
+                    @Model.RvLength ft
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    @Model.ReservationStatus
+                </p>
+
+                <p>
+                    <strong>Daily Rate:</strong>
+                    @Model.DailyRate.ToString("C")
+                </p>
+
+                <p>
+                    <strong>Total:</strong>
+                    @Model.TotalCost.ToString("C")
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card-footer">
+
+        <a asp-action="Index"
+           class="btn btn-secondary">
+
+            Back
+
+        </a>
+
+        @if (Model.ReservationStatus != "Cancelled")
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-primary">
+
+                Edit Reservation
+
+            </a>
+        }
+
+    </div>
+
+</div>
