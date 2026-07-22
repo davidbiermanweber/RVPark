@@ -158,6 +158,25 @@ public class CustomerAccountController : Controller
         return View(user);
     }
 
+    // ---------- My reservations (G2: view reservation details + pricing) ----------
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> MyReservations()
+    {
+        var user = await CurrentUserAsync();
+        if (user == null) return Challenge();
+
+        var reservations = await _db.Reservations
+            .Where(r => r.UserId == user.Id)
+            .Include(r => r.Site)!.ThenInclude(s => s!.Category)
+            .Include(r => r.ReservationFees)!.ThenInclude(rf => rf.Fee)
+            .OrderByDescending(r => r.StartDate)
+            .ToListAsync();
+
+        return View(reservations);
+    }
+
     // ---------- Password reset (G2) ----------
 
     [HttpGet]

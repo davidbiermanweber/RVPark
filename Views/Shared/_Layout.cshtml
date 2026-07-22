@@ -61,6 +61,9 @@
                         @if (isAuthed && role == "Customer")
                         {
                             <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="MyReservations">My Reservations</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="Profile">👤 @(User.FindFirst("Name")?.Value ?? "Profile")</a>
                             </li>
                             <li class="nav-item">
