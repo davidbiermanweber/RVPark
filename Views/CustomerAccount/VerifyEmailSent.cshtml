@@ -5,8 +5,18 @@
 <div class="container text-center" style="max-width: 520px;">
     <h2 class="mb-3">📧 Almost there!</h2>
     <p>We've sent a verification link to your email address. Click it to activate your account, then sign in.</p>
-    <p class="text-muted small">
-        In development, the link is written to the application log (console) instead of being emailed.
-    </p>
+    @if (TempData["DevLink"] is string devLink)
+    {
+        <div class="alert alert-warning text-start small">
+            <strong>🛠️ Development mode</strong> — no real email was sent. Verify directly:<br />
+            <a href="@devLink" class="text-break">@devLink</a>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted small">
+            In development, the link is written to the application log (console) instead of being emailed.
+        </p>
+    }
     <a asp-action="Login" class="btn btn-primary mt-2">Go to sign in</a>
 </div>

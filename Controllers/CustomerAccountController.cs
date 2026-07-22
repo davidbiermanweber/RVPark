@@ -12,12 +12,14 @@ public class CustomerAccountController : Controller
     private readonly AppDbContext _db;
     private readonly IPasswordService _passwords;
     private readonly IEmailSender _email;
+    private readonly IWebHostEnvironment _env;
 
-    public CustomerAccountController(AppDbContext db, IPasswordService passwords, IEmailSender email)
+    public CustomerAccountController(AppDbContext db, IPasswordService passwords, IEmailSender email, IWebHostEnvironment env)
     {
         _db = db;
         _passwords = passwords;
         _email = email;
+        _env = env;
     }
 
     // ---------- Registration + email verification (G1) ----------
@@ -57,6 +59,12 @@ public class CustomerAccountController : Controller
         var link = Url.Action(nameof(VerifyEmail), "CustomerAccount", new { token }, Request.Scheme);
         await _email.SendAsync(user.Email, "Verify your FamCamp account",
             $"Welcome to Hill AFB FamCamp! Please confirm your account:<br/><a href=\"{link}\">{link}</a>");
+
+        // Dev convenience: surface the link on the confirmation page so testers
+        // don't have to dig it out of the console. Environment-gated so it can
+        // never appear in production.
+        if (_env.IsDevelopment())
+            TempData["DevLink"] = link;
 
         return RedirectToAction(nameof(VerifyEmailSent));
     }
@@ -200,6 +208,12 @@ public class CustomerAccountController : Controller
                 new { token = user.PasswordResetToken }, Request.Scheme);
             await _email.SendAsync(user.Email, "Reset your FamCamp password",
                 $"Reset your password:<br/><a href=\"{link}\">{link}</a>");
+
+            // Dev-only (see Register). Note this does reveal whether the account
+            // exists, which the generic message otherwise hides — acceptable in
+            // development, and the gate keeps it out of production.
+            if (_env.IsDevelopment())
+                ViewBag.DevLink = link;
         }
 
         ViewBag.Sent = true;
