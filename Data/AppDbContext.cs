@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SitePhoto>().ToTable("SitePhotos");
         modelBuilder.Entity<ReservationFee>().ToTable("ReservationFee");
         modelBuilder.Entity<SiteBlock>().ToTable("SiteBlocks");
+        modelBuilder.Entity<ParkPolicy>().ToTable("ParkPolicies");
 
         // Don't cascade-delete reservations when a site is removed; keep history intact.
         modelBuilder.Entity<Reservation>()
@@ -54,6 +55,35 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Site>()
             .Property(s => s.IsActive)
             .HasDefaultValue(true);
+
+        // Money columns: be explicit so SQL Server doesn't default to decimal(18,2)
+        // with a truncation warning.
+        modelBuilder.Entity<ParkPolicy>()
+            .Property(p => p.CancellationFee)
+            .HasPrecision(18, 2);
+
+        // Seed the single ParkPolicy row with the requirement defaults (A3/A4):
+        // 6-month booking window, Apr–Oct peak w/ 14-day max stay, Oct 15–Apr 1
+        // long-term window, 14-day away rule, $10 standard cancellation fee with a
+        // 3-day threshold, late/holiday cancellations charge one night.
+        modelBuilder.Entity<ParkPolicy>().HasData(
+            new ParkPolicy
+            {
+                Id = 1,
+                BookingWindowMonths = 6,
+                PeakStartMonth = 4,
+                PeakEndMonth = 10,
+                PeakMaxStayDays = 14,
+                LongTermStartMonth = 10,
+                LongTermStartDay = 15,
+                LongTermEndMonth = 4,
+                LongTermEndDay = 1,
+                AwayBeforeReturnDays = 14,
+                CancellationFee = 10.00m,
+                CancellationThresholdDays = 3,
+                LateCancelChargesOneNight = true
+            }
+        );
 
         // Seeding your Admin user remains completely safe and untouched below...
         modelBuilder.Entity<Employee>().HasData(
@@ -75,4 +105,5 @@ public class AppDbContext : DbContext
     public DbSet<ReservationFee> ReservationFees { get; set; }
     public DbSet<CategoryPrice> CategoryPrices { get; set; }
     public DbSet<SiteBlock> SiteBlocks { get; set; }
+    public DbSet<ParkPolicy> ParkPolicies { get; set; }
 }

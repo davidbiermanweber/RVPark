@@ -33,6 +33,7 @@ public class CategoriesController : Controller
     {
         var category = await _db.Categories.FindAsync(id);
         if (category == null) return NotFound();
+        await LoadPricesAsync(id);
         return View(category);
     }
 
@@ -40,10 +41,24 @@ public class CategoriesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Category category)
     {
-        if(!ModelState.IsValid) return View(category);
+        if (!ModelState.IsValid)
+        {
+            await LoadPricesAsync(category.Id);
+            return View(category);
+        }
         _db.Categories.Update(category);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
+    }
+
+    // The Edit page doubles as the site type's rate schedule (A2); CategoryPrices
+    // actions redirect back here after add/update/delete.
+    private async Task LoadPricesAsync(int categoryId)
+    {
+        ViewBag.Prices = await _db.CategoryPrices
+            .Where(p => p.CategoryId == categoryId)
+            .OrderByDescending(p => p.StartDate)
+            .ToListAsync();
     }
 
     [HttpPost]
