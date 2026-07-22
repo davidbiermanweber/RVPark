@@ -49,6 +49,17 @@
                         <li class="nav-item">
                             <a class="nav-link text-primary fw-bold" asp-area="" asp-controller="Sites" asp-action="ManageReservations">📋 Manage Reservations</a>
                         </li>
+                        @if (User.Identity?.IsAuthenticated == true &&
+                                User.FindFirst("Role")?.Value == "Employee")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark"
+                                    asp-controller="EmployeeReservation"
+                                    asp-action="Index">
+                                        Employee Reservations
+                                    </a>
+                                </li>
+                            }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-controller="Payment" asp-action="Index">Payment</a>
                         </li>
