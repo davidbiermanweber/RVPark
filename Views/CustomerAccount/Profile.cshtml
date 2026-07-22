@@ -1,0 +1,49 @@
+@model User
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container" style="max-width: 520px;">
+    <h2 class="mb-3">My profile</h2>
+
+    @if (ViewBag.Saved == true)
+    {
+        <div class="alert alert-success">Profile updated.</div>
+    }
+
+    <form method="post" asp-action="Profile">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label">Full name</label>
+            <input name="name" value="@Model.Name" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input value="@Model.Email" class="form-control" disabled />
+            <div class="form-text">Email is used to sign in and can't be changed here.</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input name="phone" value="@Model.Phone" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Military affiliation</label>
+            <select name="affiliation" class="form-select"
+                    asp-items="Html.GetEnumSelectList<MilitaryAffiliation>()">
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Status / rank / unit</label>
+            <input name="militaryStatus" value="@Model.MilitaryStatus" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Preselect the stored affiliation in the dropdown.
+        document.querySelector('select[name="affiliation"]').value = '@Model.Affiliation';
+    </script>
+}
