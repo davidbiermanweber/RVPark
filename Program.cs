@@ -12,6 +12,9 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Shared availability logic used by customer browse and admin availability views.
+builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+
 
 //  Configures Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

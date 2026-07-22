@@ -40,6 +40,20 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Fee>().ToTable("Fees");
         modelBuilder.Entity<SitePhoto>().ToTable("SitePhotos");
         modelBuilder.Entity<ReservationFee>().ToTable("ReservationFee");
+        modelBuilder.Entity<SiteBlock>().ToTable("SiteBlocks");
+
+        // Don't cascade-delete reservations when a site is removed; keep history intact.
+        modelBuilder.Entity<Reservation>()
+            .HasOne(r => r.Site)
+            .WithMany()
+            .HasForeignKey(r => r.SiteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Backfill existing sites to active and default new rows to active, so adding
+        // the column doesn't silently make every current site unbookable.
+        modelBuilder.Entity<Site>()
+            .Property(s => s.IsActive)
+            .HasDefaultValue(true);
 
         // Seeding your Admin user remains completely safe and untouched below...
         modelBuilder.Entity<Employee>().HasData(
@@ -60,4 +74,5 @@ public class AppDbContext : DbContext
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationFee> ReservationFees { get; set; }
     public DbSet<CategoryPrice> CategoryPrices { get; set; }
+    public DbSet<SiteBlock> SiteBlocks { get; set; }
 }
