@@ -97,6 +97,24 @@ public class AppDbContext : DbContext
                 AccessLevel = 3
             }
         );
+
+        modelBuilder.Entity<User>().HasData(
+    new User
+        {
+            Id = 5738,
+            Name = "Test Customer",
+            Email = "test@example.com",
+            Phone = "555-0000",
+            PasswordHash = "password",
+            Affiliation = MilitaryAffiliation.Other,
+            MilitaryStatus = "Test",
+            IsEmailVerified = true,
+            EmailVerificationToken = null,
+            TokenExpiresUtc = null,
+            PasswordResetToken = null,
+            ResetExpiresUtc = null
+        }
+);
     }
 
     public DbSet<SitePhoto> SitePhotos {get; set;}
