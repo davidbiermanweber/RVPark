@@ -14,7 +14,7 @@
             View, search, modify, and manage customer reservations.
         </p>
     </div>
-    <a asp-action="WalkIn" class="btn btn-success mb-3">➕ Process Walk-In</a>
+    <a asp-controller="Sites" asp-action="WalkIn" class="btn btn-success mb-3">➕ Process Walk-In</a>
 </div>
 
 @if (TempData["SuccessMessage"] != null)
