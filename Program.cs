@@ -19,7 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Password hashing (NFR-3) and dev email delivery for account verification (G1).
 builder.Services.AddSingleton<IPasswordService, PasswordService>();
-builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
+builder.Services.AddSingleton<IEmailSender, SendGridEmailSender>();
 
 // Restored to feed dependencies into SitesController so the management views load normally
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();

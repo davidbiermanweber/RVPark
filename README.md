@@ -28,3 +28,15 @@ Hello I'm Abraham Maldonado I look forward to working with all of you. I am a CS
 Hello, my name is Seth Cash and I'm excited to get to learn more about software engineering and git! I work full time as a pharmacy technician 
 and do classes online at night. I like playing video games and doing photography. I should finish my degree in December. 
 I don't know much about git etiquette, so I'm ready to learn more about it.
+
+These are the commands used to deploy the code.
+The first builds the app, the second zips it up, the third uploads it to Azure.
+
+dotnet publish -c Release -o ./publish
+Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force
+az webapp deploy --resource-group RvParkRG --name rvparkapp-group2 --src-path ./publish.zip
+
+
+This is the url of the live site.
+https://rvparkapp-group2.azurewebsites.net
+
