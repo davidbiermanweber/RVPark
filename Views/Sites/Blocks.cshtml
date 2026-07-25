@@ -14,23 +14,39 @@
 
     <div class="card shadow-sm p-3 mb-4">
         <h5>Add a block</h5>
-        <form method="post" asp-action="Block" class="row g-2 align-items-end">
+        <form method="post" asp-action="Block" class="row g-3">
             @Html.AntiForgeryToken()
             <input type="hidden" name="siteId" value="@Model.Id" />
+
             <div class="col-md-3">
-                <label class="form-label">Start</label>
+                <label class="form-label fw-bold">Start Date</label>
                 <input type="date" name="startDate" class="form-control" required />
             </div>
+
             <div class="col-md-3">
-                <label class="form-label">End</label>
+                <label class="form-label fw-bold">End Date</label>
                 <input type="date" name="endDate" class="form-control" required />
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Reason</label>
-                <input type="text" name="reason" class="form-control" placeholder="Maintenance, special use…" required />
+
+            @* FIXED: Swapped raw text box with status selector dropdown *@
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Availability Status</label>
+                <select name="reason" class="form-select" required>
+                    <option value="">-- Choose Status Category --</option>
+                    <option value="Maintenance">🛠️ Maintenance Mode</option>
+                    <option value="Unavailable">🚫 Temporarily Unavailable</option>
+                    <option value="Other">⚠️ Other / Special Use Block</option>
+                </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-warning w-100">Block</button>
+
+            @* ADDED: Optional notes field to capture repair specifics or details *@
+            <div class="col-md-9">
+                <label class="form-label text-muted small">Additional Log Notes (Optional)</label>
+                <input type="text" name="notes" class="form-control" placeholder="e.g., Water line leak repair, winter closure, etc." />
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-warning w-100 fw-bold">Apply Status Block</button>
             </div>
         </form>
     </div>
@@ -40,7 +56,7 @@
             <tr>
                 <th>Start</th>
                 <th>End</th>
-                <th>Reason</th>
+                <th>Reason / Status Context</th>
                 <th></th>
             </tr>
         </thead>

@@ -3,7 +3,12 @@ using RvParkApp.Models;
 
 public class AppDbContext : DbContext
 {
-    // temporary supressed override
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
+
+    // Ensure your OnConfiguring looks exactly like your teammates' original:
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
@@ -13,8 +18,6 @@ public class AppDbContext : DbContext
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     }
 
-
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     public DbSet<User> Users { get; set; }
 
     public DbSet<Category> Categories { get; set; }
