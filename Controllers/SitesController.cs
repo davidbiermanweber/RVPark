@@ -33,7 +33,7 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Site site)
     {
-        if(!ModelState.IsValid) return View(site);
+        if (!ModelState.IsValid) return View(site);
         _db.Sites.Add(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -51,7 +51,7 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Site site)
     {
-        if(!ModelState.IsValid) return View(site);
+        if (!ModelState.IsValid) return View(site);
         _db.Sites.Update(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -315,5 +315,135 @@ public class SitesController : Controller
             : $"Changes applied successfully. Refund calculated: ${Math.Abs(deltaBalance):F2}.";
 
         return View(res);
+    }
+
+    // =========================================================================
+    // Walk-In Reservation Process
+    // =========================================================================
+
+    [HttpGet]
+    public async Task<IActionResult> WalkIn()
+    {
+        ViewBag.AllSites = await _db.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
+        return View(new Reservation
+        {
+            StartDate = DateTime.Today,
+            FinishDate = DateTime.Today.AddDays(1),
+            RvLength = 30
+        });
+    }
+
+// JSON endpoint to verify if a user exists by email or phone
+    [HttpGet]
+    public async Task<IActionResult> CheckUser(string email, string phone)
+    {
+        var trimmedEmail = email?.Trim().ToLower();
+        var trimmedPhone = phone?.Trim();
+
+        User? user = null;
+        if (!string.IsNullOrEmpty(trimmedEmail))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == trimmedEmail);
+        }
+        if (user == null && !string.IsNullOrEmpty(trimmedPhone))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Phone == trimmedPhone);
+        }
+
+        return Json(new { exists = user != null, name = user?.Name });
+    }
+
+   [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> WalkIn(string customerName, string customerEmail, string customerPhone, int siteId, DateTime startDate, DateTime finishDate, int rvLength, bool registerNew = false)
+    {
+        ViewBag.AllSites = await _db.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
+
+        if (finishDate <= startDate)
+        {
+            ModelState.AddModelError("", "Departure must be after arrival.");
+            return View();
+        }
+
+        if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate))
+        {
+            ModelState.AddModelError("", "The selected site is not available for those dates.");
+            return View();
+        }
+
+        var trimmedEmail = customerEmail?.Trim().ToLower();
+        var trimmedPhone = customerPhone?.Trim();
+
+        User? user = null;
+        if (!string.IsNullOrEmpty(trimmedEmail))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == trimmedEmail);
+        }
+        if (user == null && !string.IsNullOrEmpty(trimmedPhone))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Phone == trimmedPhone);
+        }
+
+        // If user doesn't exist and registration hasn't been confirmed yet
+        if (user == null && !registerNew)
+        {
+            // Pass values back to repopulate the form and trigger the confirmation pop-up
+            ViewBag.TriggerUserPrompt = true;
+            ViewBag.CustomerName = customerName;
+            ViewBag.CustomerEmail = customerEmail;
+            ViewBag.CustomerPhone = customerPhone;
+            ViewBag.SiteId = siteId;
+            ViewBag.StartDate = startDate.ToString("yyyy-MM-dd");
+            ViewBag.FinishDate = finishDate.ToString("yyyy-MM-dd");
+            ViewBag.RvLength = rvLength;
+
+            ModelState.AddModelError("", "Customer not found in the system.");
+            return View();
+        }
+
+        // If user didn't exist but registration was confirmed, create the new user record
+        if (user == null)
+        {
+            var fallbackEmail = string.IsNullOrEmpty(trimmedEmail) ? $"{Guid.NewGuid().ToString().Substring(0, 8)}@walkin.local" : trimmedEmail;
+            user = new User
+            {
+                Name = string.IsNullOrWhiteSpace(customerName) ? "Walk-In Guest" : customerName.Trim(),
+                Email = fallbackEmail,
+                Phone = trimmedPhone ?? string.Empty
+            };
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+        }
+
+        // Fetch site and calculate pricing using category pricing
+        var site = await _db.Sites.FindAsync(siteId);
+        var today = DateTime.Today;
+        var categoryPrice = await _db.CategoryPrices
+            .Where(p => p.CategoryId == site.CategoryId && p.StartDate <= today && (p.EndDate == null || p.EndDate >= today))
+            .OrderByDescending(p => p.StartDate)
+            .FirstOrDefaultAsync();
+
+        decimal dailyRate = categoryPrice?.Price ?? 0m;
+        int nights = Math.Max(1, (finishDate - startDate).Days);
+
+        var reservation = new Reservation
+        {
+            UserId = user.Id,
+            SiteId = siteId,
+            StartDate = startDate,
+            FinishDate = finishDate,
+            RvLength = rvLength,
+            ReservationStatus = "Active",
+            DailyRate = dailyRate,
+            TotalCost = nights * dailyRate,
+            RefundedAmount = 0m,
+            PriceModifier = 0m
+        };
+
+        _db.Reservations.Add(reservation);
+        await _db.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Walk-in reservation #{reservation.Id} successfully created for {user.Name}!";
+        return RedirectToAction(nameof(ManageReservations));
     }
 }
