@@ -208,9 +208,6 @@ public class SitesController : Controller
     // Master list & search panel.
     public async Task<IActionResult> ManageReservations(string searchString)
     {
-        // LOAD SITES LIST AND PROPAGATE VIEW DATA SO DROPDOWN GENERATES CLEANLY
-        ViewBag.AllSites = await _db.Sites.Include(s => s.Category).OrderBy(s => s.Name).ToListAsync();
-
         var query = _db.Reservations
             .Include(r => r.User)
             .Include(r => r.Site)
@@ -227,10 +224,6 @@ public class SitesController : Controller
         ViewBag.SearchString = searchString;
         return View(await query.ToListAsync());
     }
-
-    // =========================================================================
-    // EDIT EXISTING RESERVATIONS — ADMIN ACTIONS (FIXED ENGINE)
-    // =========================================================================
 
     // Load the modification form.
     [HttpGet]
@@ -250,7 +243,7 @@ public class SitesController : Controller
         return View(reservation);
     }
 
-    // Cancel / un-cancel / update (site + dates), with fresh availability checks and a balance delta.
+    // Cancel / un-cancel / update (site + dates), with availability checks and a balance delta.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction)
@@ -263,44 +256,34 @@ public class SitesController : Controller
 
         if (res == null) return NotFound();
 
-        // Keep dynamic list loaded for the form view dropdown parameters
         ViewBag.AllSites = await _db.Sites.Include(s => s.Category).ToListAsync();
 
-        // ❌ ACTION 1: CANCEL RESERVATION
         if (statusAction == "Cancel")
         {
             res.ReservationStatus = "Cancelled";
-            res.RefundedAmount = res.TotalCost; // Dynamic fallback to total initial cost parameters
+            res.RefundedAmount = res.TotalCost;
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(ManageReservations));
         }
 
-        // 🔄 ACTION 2: UN-CANCEL / REACTIVATE EXISTING RESERVATION
         if (statusAction == "UnCancel")
         {
-            // FIX: Check availability against the selected window inside the form inputs, not the old historic window!
-            if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate, ignoreReservationId: res.Id))
+            if (res.SiteId == null ||
+                !await _availability.IsSiteAvailableAsync(res.SiteId.Value, res.StartDate, res.FinishDate, ignoreReservationId: res.Id))
             {
-                ModelState.AddModelError("", "Cannot reactivate: The selected site is occupied or blocked for those dates.");
+                ModelState.AddModelError("", "Cannot un-cancel: assign an available site for those dates first.");
                 return View(res);
             }
 
-            int nights = Math.Max(1, (finishDate - startDate).Days);
-            res.SiteId = siteId;
-            res.StartDate = startDate;
-            res.FinishDate = finishDate;
-            res.TotalCost = nights * res.DailyRate;
             res.ReservationStatus = "Active";
-            res.RefundedAmount = 0m; // Reset cancellation refund flags completely
-
+            res.RefundedAmount = 0m;
             await _db.SaveChangesAsync();
-            res.Site = await _db.Sites.FindAsync(siteId);
 
-            ViewBag.BalanceMessage = "Reservation successfully reactivated to Active status tracking workflows.";
+            ViewBag.BalanceMessage = "Reservation successfully reactivated to Active status.";
             return View(res);
         }
 
-        // ⚙️ ACTION 3: STANDARD EDIT MODIFICATION (DATES, SITES, & REFUND PRICING)
+        // Update: validate dates + availability, then recalculate the balance delta.
         if (finishDate <= startDate)
         {
             ModelState.AddModelError("", "Departure must be after arrival.");
@@ -309,39 +292,27 @@ public class SitesController : Controller
 
         if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate, ignoreReservationId: res.Id))
         {
-            ModelState.AddModelError("", "The selected campsite is not available for those specific dates.");
+            ModelState.AddModelError("", "The selected site is not available for those dates.");
             return View(res);
         }
 
-        // Mathematical pricing differences engine
-        int originalNights = Math.Max(1, (res.FinishDate - res.StartDate).Days);
-        int newNights = Math.Max(1, (finishDate - startDate).Days);
+        int originalNights = (res.FinishDate - res.StartDate).Days;
+        int newNights = (finishDate - startDate).Days;
         decimal deltaBalance = (newNights - originalNights) * res.DailyRate;
 
         res.SiteId = siteId;
         res.StartDate = startDate;
         res.FinishDate = finishDate;
         res.TotalCost = newNights * res.DailyRate;
-
-        // FIXED: Log automated refund values if the stay was shortened (negative delta balance value)
-        if (deltaBalance < 0)
-        {
-            res.RefundedAmount = Math.Abs(deltaBalance);
-        }
-        else
-        {
-            res.RefundedAmount = 0m; // Additional payments made, clear residual refund properties
-        }
-
-        // Handle implicit un-cancellations if parameters are edited while flagged as Cancelled
         if (res.ReservationStatus == "Cancelled") res.ReservationStatus = "Active";
 
         await _db.SaveChangesAsync();
+
         res.Site = await _db.Sites.FindAsync(siteId);
 
         ViewBag.BalanceMessage = deltaBalance >= 0
             ? $"Changes applied successfully. Additional payment required: ${deltaBalance:F2}."
-            : $"Changes applied successfully. Automatic refund calculated and saved: ${Math.Abs(deltaBalance):F2}.";
+            : $"Changes applied successfully. Refund calculated: ${Math.Abs(deltaBalance):F2}.";
 
         return View(res);
     }
