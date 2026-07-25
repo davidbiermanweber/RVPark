@@ -63,7 +63,13 @@
                     <td>
                         @if (isCancelled)
                         {
-                            <span class="badge bg-danger">Cancelled</span>
+                            <div>
+                                <span class="badge bg-danger">Cancelled</span>
+                                @if (item.CancelledAtUtc != null)
+                                {
+                                    <div class="small text-muted mt-1">Cancelled @item.CancelledAtUtc.Value.ToLocalTime().ToString("g")</div>
+                                }
+                            </div>
                         }
                         else if (item.ReservationStatus != null && item.ReservationStatus.Contains("Paid via"))
                         {

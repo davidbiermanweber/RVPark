@@ -14,13 +14,37 @@
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
+    <!-- SEARCH AND FILTER BAR -->
+    <div class="row mb-4 mt-3">
+        <div class="col-md-6 mb-2 mb-md-0">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white">🔍</span>
+                <input type="text" id="searchName" class="form-control border-start-0" placeholder="Search by site name..." />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white">📅 Filter by Date</span>
+                <input type="date" id="searchDate" class="form-control" />
+                <button class="btn btn-outline-secondary" type="button" id="clearFilters">Clear</button>
+            </div>
+        </div>
+    </div>
+    <!-- END SEARCH AND FILTER BAR -->
+
+    <div class="row row-cols-1 row-cols-md-2 g-3 mt-1" id="reservationsContainer">
         @foreach (var r in Model)
         {
             var nights = Math.Max(1, (r.FinishDate - r.StartDate).Days);
             var isCancelled = r.ReservationStatus != null && r.ReservationStatus.StartsWith("Cancel");
+            var siteName = r.Site != null ? r.Site.Name : "Site to be assigned";
 
-            <div class="col">
+            <!-- Added data-attributes and a targeting class for JS filtering -->
+            <div class="col reservation-card-wrapper" 
+                 data-site-name="@siteName.ToLower()" 
+                 data-start-date="@r.StartDate.ToString("yyyy-MM-dd")" 
+                 data-finish-date="@r.FinishDate.ToString("yyyy-MM-dd")">
+                
                 <div class="card h-100 shadow-sm">
                     <div class="card-body d-flex flex-column justify-content-between">
                         <div>
@@ -144,4 +168,52 @@ else
             </div>
         }
     </div>
+
+    @section Scripts {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const searchName = document.getElementById("searchName");
+                const searchDate = document.getElementById("searchDate");
+                const clearFilters = document.getElementById("clearFilters");
+                const cards = document.querySelectorAll(".reservation-card-wrapper");
+
+                function filterCards() {
+                    const nameQuery = searchName.value.toLowerCase().trim();
+                    const dateQuery = searchDate.value; // Format: YYYY-MM-DD
+
+                    cards.forEach(card => {
+                        const siteName = card.getAttribute("data-site-name");
+                        const startDate = card.getAttribute("data-start-date");
+                        const finishDate = card.getAttribute("data-finish-date");
+
+                        // Check if name matches
+                        const matchesName = nameQuery === "" || siteName.includes(nameQuery);
+
+                        // Check if the selected date falls within the reservation date range
+                        let matchesDate = true;
+                        if (dateQuery !== "") {
+                            matchesDate = (dateQuery >= startDate && dateQuery <= finishDate);
+                        }
+
+                        // Toggle visibility
+                        if (matchesName && matchesDate) {
+                            card.style.display = "";
+                        } else {
+                            card.style.display = "none";
+                        }
+                    });
+                }
+
+                // Attach event listeners
+                searchName.addEventListener("input", filterCards);
+                searchDate.addEventListener("change", filterCards);
+
+                clearFilters.addEventListener("click", function () {
+                    searchName.value = "";
+                    searchDate.value = "";
+                    filterCards(); // Reset view
+                });
+            });
+        </script>
+    }
 }

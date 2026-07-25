@@ -175,8 +175,12 @@ public class CustomerAccountController : Controller
         var user = await CurrentUserAsync();
         if (user == null) return Challenge();
 
+        var cutoff = DateTime.UtcNow.AddMinutes(-10);
+
         var reservations = await _db.Reservations
-            .Where(r => r.UserId == user.Id)
+            .Where(r => r.UserId == user.Id && (
+                !r.ReservationStatus.Contains("Cancelled") ||
+                (r.CancelledAtUtc != null && r.CancelledAtUtc > cutoff)))
             .Include(r => r.Site)!.ThenInclude(s => s!.Category)
             .Include(r => r.ReservationFees)!.ThenInclude(rf => rf.Fee)
             .OrderByDescending(r => r.StartDate)

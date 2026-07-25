@@ -270,6 +270,7 @@ public class SitesController : Controller
         if (statusAction == "Cancel")
         {
             res.ReservationStatus = "Cancelled";
+            res.CancelledAtUtc = DateTime.UtcNow;
             res.RefundedAmount = res.TotalCost; // Dynamic fallback to total initial cost parameters
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(ManageReservations));

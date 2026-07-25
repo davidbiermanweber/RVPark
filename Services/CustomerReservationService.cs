@@ -69,6 +69,7 @@ namespace RvParkApp.Services
             if (reservation == null) return false;
 
             reservation.ReservationStatus = "Cancelled";
+            reservation.CancelledAtUtc = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }

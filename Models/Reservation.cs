@@ -29,6 +29,8 @@ public class Reservation
 
     public decimal PriceModifier { get; set; }
 
+    public DateTime? CancelledAtUtc { get; set; }
+
     // Fees (you already have this concept)
     public ICollection<ReservationFee>? ReservationFees { get; set; }
 

@@ -217,6 +217,7 @@ public class EmployeeReservationController : Controller
         }
 
         reservation.ReservationStatus = "Cancelled";
+        reservation.CancelledAtUtc = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
