@@ -54,10 +54,14 @@ namespace RvParkApp.Controllers
         // SECURE ACTIONS: RESTRICTED TO LOGGED-IN CUSTOMERS ONLY
         // ========================================================
 
-        [Authorize] // Requires login to actually save a new booking record
         [HttpPost]
         public async Task<IActionResult> Reserve(int siteId, DateTime start, DateTime end, int rvLength)
         {
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return RedirectToAction("Login", "CustomerAccount");
+            }
+
             var context = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
 
             var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

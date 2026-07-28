@@ -2,6 +2,10 @@
 @{
     ViewData["Title"] = "Find a Campsite";
     var results = ViewBag.Results as List<Site>;
+    var role = User.FindFirst("Role")?.Value;
+    var isStaffUser = User.Identity?.IsAuthenticated == true &&
+                      (string.Equals(role, "Employee", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase));
 }
 
 <div class="container mt-4">
@@ -84,15 +88,22 @@
                                 </ul>
                             </div>
                             <div class="card-footer bg-transparent border-0 pb-3">
-                                <form asp-controller="CustomerBooking" asp-action="Reserve" method="post">
-                                    <!-- Hidden input tracking tokens passed down to the backend engine -->
-                                    <input type="hidden" name="siteId" value="@site.Id" />
-                                    <input type="hidden" name="start" value="@Model.Start?.ToString("yyyy-MM-dd")" />
-                                    <input type="hidden" name="end" value="@Model.End?.ToString("yyyy-MM-dd")" />
-                                    <input type="hidden" name="rvLength" value="@Model.RvLength" />
+                                @if (isStaffUser)
+                                {
+                                    <a asp-controller="Sites" asp-action="Index" class="btn btn-primary w-100">Manage Site</a>
+                                }
+                                else
+                                {
+                                    <form asp-controller="CustomerBooking" asp-action="Reserve" method="post">
+                                        <!-- Hidden input tracking tokens passed down to the backend engine -->
+                                        <input type="hidden" name="siteId" value="@site.Id" />
+                                        <input type="hidden" name="start" value="@Model.Start?.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="end" value="@Model.End?.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="rvLength" value="@Model.RvLength" />
 
-                                    <button type="submit" class="btn btn-success w-100">⛺ Confirm Reservation</button>
-                                </form>
+                                        <button type="submit" class="btn btn-success w-100">⛺ Confirm Reservation</button>
+                                    </form>
+                                }
                             </div>
 
                         </div>

@@ -126,7 +126,7 @@ public class CustomerAccountController : Controller
         }
 
         await SignInCustomerAsync(user);
-        return RedirectToAction("Search", "Availability");
+        return RedirectToAction("Search", "CustomerBooking");
     }
 
     [HttpPost]
