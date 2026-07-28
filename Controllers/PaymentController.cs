@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
 
+[EmployeeOnly]
+
 public class PaymentController : Controller
 {
     private readonly IConfiguration _config;

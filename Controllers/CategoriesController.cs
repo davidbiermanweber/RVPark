@@ -3,6 +3,7 @@ using System.Net.NetworkInformation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+[EmployeeOnly]
 public class CategoriesController : Controller
 {
     private readonly AppDbContext _db;
