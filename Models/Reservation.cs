@@ -29,6 +29,8 @@ public class Reservation
 
     public decimal PriceModifier { get; set; }
 
+    public string Notes { get; set; } = string.Empty;
+
     public DateTime? CancelledAtUtc { get; set; }
 
     // Fees (you already have this concept)

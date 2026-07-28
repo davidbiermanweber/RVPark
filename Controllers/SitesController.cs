@@ -253,7 +253,7 @@ public class SitesController : Controller
     // Cancel / un-cancel / update (site + dates), with fresh availability checks and a balance delta.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction)
+    public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction, string? notes = null)
     {
         var res = await _db.Reservations
             .Include(r => r.User)
@@ -272,6 +272,15 @@ public class SitesController : Controller
             res.ReservationStatus = "Cancelled";
             res.CancelledAtUtc = DateTime.UtcNow;
             res.RefundedAmount = res.TotalCost; // Dynamic fallback to total initial cost parameters
+            res.Notes = string.Empty;
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(ManageReservations));
+        }
+
+        if (statusAction == "Complete")
+        {
+            res.ReservationStatus = "Completed";
+            res.Notes = string.Empty;
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(ManageReservations));
         }

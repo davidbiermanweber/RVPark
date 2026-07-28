@@ -189,6 +189,30 @@ public class CustomerAccountController : Controller
         return View(reservations);
     }
 
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveReservationNotes(int id, string notes)
+    {
+        var user = await CurrentUserAsync();
+        if (user == null) return Challenge();
+
+        var reservation = await _db.Reservations.FirstOrDefaultAsync(r => r.Id == id && r.UserId == user.Id);
+        if (reservation == null) return NotFound();
+
+        var trimmedNotes = (notes ?? string.Empty).Trim();
+        reservation.Notes = trimmedNotes;
+
+        if (reservation.ReservationStatus.Contains("Cancelled", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(reservation.ReservationStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            reservation.Notes = string.Empty;
+        }
+
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(MyReservations));
+    }
+
     // ---------- Password reset (G2) ----------
 
     [HttpGet]

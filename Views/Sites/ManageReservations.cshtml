@@ -33,6 +33,7 @@
                 <th>Assigned Site</th>
                 <th>Timeline Dates</th>
                 <th>Status</th>
+                <th>Customer Notes</th>
                 <th>Total Value</th>
                 <th>Actions</th>
             </tr>
@@ -81,6 +82,16 @@
                         }
                     </td>
 
+                    <td>
+                        @if (string.IsNullOrWhiteSpace(item.Notes))
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            <span class="text-dark">@item.Notes</span>
+                        }
+                    </td>
                     <td>$@item.TotalCost.ToString("F2")</td>
                     <td>
                         <!-- TRIGGER INTERACTIVE ADMIN MANAGEMENT MODAL -->
@@ -148,10 +159,23 @@
                             <select name="statusAction" class="form-select border-primary" required>
                                 <option value="Update" selected="@(!isCancelled)">🟢 Keep Active / Apply Changes</option>
                                 <option value="Cancel" selected="@isCancelled">❌ Cancel Booking & Issue Auto-Refund</option>
+                                <option value="Complete">✅ Mark Reservation as Completed</option>
                                 <option value="UnCancel">🔄 Reactivate Cancelled Booking Status</option>
                                 <option value="Maintenance">🛠️ Shift Campsite to Maintenance Block</option>
                                 <option value="Unavailable">🚫 Shift Campsite to Temporarily Unavailable</option>
                             </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-info">Customer Notes</label>
+                            @if (string.IsNullOrWhiteSpace(item.Notes))
+                            {
+                                <div class="text-muted small">No notes have been added for this reservation.</div>
+                            }
+                            else
+                            {
+                                <div class="border rounded p-2 bg-light">@item.Notes</div>
+                            }
                         </div>
 
                         <div class="mb-3">
