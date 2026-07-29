@@ -1,0 +1,115 @@
+﻿@model AvailabilitySearchViewModel
+@{
+    ViewData["Title"] = "Find a Campsite";
+    var results = ViewBag.Results as List<Site>;
+    var role = User.FindFirst("Role")?.Value;
+    var isStaffUser = User.Identity?.IsAuthenticated == true &&
+                      (string.Equals(role, "Employee", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase));
+}
+
+<div class="container mt-4">
+    <h2>Book Your Stay</h2>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            🎉 @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <hr />
+
+    <form asp-controller="CustomerBooking" asp-action="Search" method="post" class="row g-3 p-3 bg-light rounded shadow-sm">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="col-md-3">
+            <label class="form-label font-weight-bold">Check-In Date</label>
+            <input type="date" name="Start" class="form-control" value="@(Model?.Start?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" required />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label font-weight-bold">Check-Out Date</label>
+            <input type="date" name="End" class="form-control" value="@(Model?.End?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"))" required />
+        </div>
+
+        @* FIXED: Swapped raw input box with dynamic dropdown to remove numeric ID confusion *@
+        <div class="col-md-3">
+            <label class="form-label font-weight-bold">Site Type</label>
+            <select name="CategoryId" class="form-select" required>
+                <option value="">-- Select Site Type --</option>
+                @if (ViewBag.Categories != null)
+                {
+                    foreach (var category in (List<Category>)ViewBag.Categories)
+                    {
+                        @* Keeps the item selected if a customer submitted the form and the page reloaded *@
+                        bool isSelected = Model != null && Model.CategoryId == category.Id;
+                        if (isSelected)
+                        {
+                            <option value="@category.Id" selected="selected">@category.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label font-weight-bold">RV Length (Feet)</label>
+            <input type="number" name="RvLength" class="form-control" value="@Model?.RvLength" min="0" placeholder="0 if no RV" />
+        </div>
+
+        <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary px-4">Search Availability</button>
+        </div>
+    </form>
+
+    @if (results != null)
+    {
+        <h3 class="mt-5">Available Sites Matching Your Search</h3>
+        @if (!results.Any())
+        {
+            <div class="alert alert-warning mt-3">No campsites match your exact dates, type, or RV length constraints.</div>
+        }
+        else
+        {
+            <div class="row mt-3">
+                @foreach (var site in results)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">@site.Name</h5>
+                                <p class="card-text text-muted">@site.Description</p>
+                                <ul class="list-unstyled custom-list small">
+                                    <li><strong>Max RV Limit:</strong> @site.MaxRvLength ft</li>
+                                </ul>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                @if (isStaffUser)
+                                {
+                                    <a asp-controller="Sites" asp-action="Index" class="btn btn-primary w-100">Manage Site</a>
+                                }
+                                else
+                                {
+                                    <form asp-controller="CustomerBooking" asp-action="Reserve" method="post">
+                                        <!-- Hidden input tracking tokens passed down to the backend engine -->
+                                        <input type="hidden" name="siteId" value="@site.Id" />
+                                        <input type="hidden" name="start" value="@Model.Start?.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="end" value="@Model.End?.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="rvLength" value="@Model.RvLength" />
+
+                                        <button type="submit" class="btn btn-success w-100">⛺ Confirm Reservation</button>
+                                    </form>
+                                }
+                            </div>
+
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

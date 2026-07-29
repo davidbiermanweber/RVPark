@@ -24,3 +24,23 @@ public class LoggingEmailSender : IEmailSender
         return Task.CompletedTask;
     }
 }
+
+public class SendGridEmailSender : IEmailSender
+{
+    private readonly IConfiguration _config;
+
+    public SendGridEmailSender(IConfiguration config) => _config = config;
+
+    public async Task SendAsync(string toEmail, string subject, string htmlBody)
+    {
+        var client = new SendGrid.SendGridClient(_config["SendGrid:ApiKey"]);
+        var msg = new SendGrid.Helpers.Mail.SendGridMessage
+        {
+            From = new SendGrid.Helpers.Mail.EmailAddress(_config["SendGrid:From"], _config["SendGrid:FromName"]),
+            Subject = subject,
+            HtmlContent = htmlBody
+        };
+        msg.AddTo(new SendGrid.Helpers.Mail.EmailAddress(toEmail));
+        await client.SendEmailAsync(msg);
+    }
+}

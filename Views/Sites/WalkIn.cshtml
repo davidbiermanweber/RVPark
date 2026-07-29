@@ -1,0 +1,86 @@
+@model Reservation
+@{
+    ViewData["Title"] = "Process Walk-In Booking";
+    var triggerPrompt = ViewBag.TriggerUserPrompt as bool? ?? false;
+}
+
+<div class="container mt-4" style="max-width: 650px;">
+    <div class="card shadow p-4">
+        <h3 class="border-bottom pb-2 mb-4">🚶‍♂️ Process Walk-In Booking</h3>
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <form method="post" asp-action="WalkIn" id="walkInForm">
+            @Html.AntiForgeryToken()
+            
+            <!-- Hidden input toggled to true if the user clicks 'OK' on the prompt -->
+            <input type="hidden" name="registerNew" id="registerNewInput" value="false" />
+
+            <div class="card mb-3 p-3 bg-light">
+                <h5 class="text-secondary">Customer Information</h5>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Customer Name</label>
+                    <input type="text" name="customerName" value="@ViewBag.CustomerName" class="form-control" required placeholder="Full Name" />
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Email Address</label>
+                        <input type="email" name="customerEmail" value="@ViewBag.CustomerEmail" class="form-control" placeholder="guest@example.com" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Phone Number</label>
+                        <input type="text" name="customerPhone" value="@ViewBag.CustomerPhone" class="form-control" placeholder="(555) 555-5555" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4 p-3 bg-light">
+                <h5 class="text-secondary">Stay & Site Details</h5>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Assign Site Location</label>
+                    <select name="siteId" class="form-select" required>
+                        @foreach (var s in ViewBag.AllSites as List<Site>)
+                        {
+                            var isSelected = ViewBag.SiteId != null && (int)ViewBag.SiteId == s.Id;
+                            <option value="@s.Id" selected="@isSelected">
+                                @s.Name (@s.Category?.Name) — Max RV: @(s.MaxRvLength == 0 ? "Any" : s.MaxRvLength + "ft")
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Arrival Date</label>
+                        <input type="date" name="startDate" value="@(ViewBag.StartDate ?? DateTime.Today.ToString("yyyy-MM-dd"))" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Departure Date</label>
+                        <input type="date" name="finishDate" value="@(ViewBag.FinishDate ?? DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"))" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">RV Length (feet)</label>
+                    <input type="number" name="rvLength" value="@(ViewBag.RvLength ?? 30)" min="1" class="form-control" required />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success flex-grow-1 py-2 fw-bold">✅ Confirm & Book Walk-In</button>
+                <a asp-action="ManageReservations" class="btn btn-secondary py-2 px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (triggerPrompt)
+{
+    <script>
+        // Executes immediately upon page reload when the controller flags a missing user
+        if (confirm("This customer does not exist in the system. Would you like to register them as a new user and proceed with the booking?")) {
+            document.getElementById('registerNewInput').value = 'true';
+            document.getElementById('walkInForm').submit();
+        }
+    </script>
+}

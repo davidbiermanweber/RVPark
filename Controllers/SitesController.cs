@@ -33,7 +33,7 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Site site)
     {
-        if(!ModelState.IsValid) return View(site);
+        if (!ModelState.IsValid) return View(site);
         _db.Sites.Add(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -51,7 +51,7 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Site site)
     {
-        if(!ModelState.IsValid) return View(site);
+        if (!ModelState.IsValid) return View(site);
         _db.Sites.Update(site);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -208,6 +208,9 @@ public class SitesController : Controller
     // Master list & search panel.
     public async Task<IActionResult> ManageReservations(string searchString)
     {
+        // LOAD SITES LIST AND PROPAGATE VIEW DATA SO DROPDOWN GENERATES CLEANLY
+        ViewBag.AllSites = await _db.Sites.Include(s => s.Category).OrderBy(s => s.Name).ToListAsync();
+
         var query = _db.Reservations
             .Include(r => r.User)
             .Include(r => r.Site)
@@ -224,6 +227,10 @@ public class SitesController : Controller
         ViewBag.SearchString = searchString;
         return View(await query.ToListAsync());
     }
+
+    // =========================================================================
+    // EDIT EXISTING RESERVATIONS — ADMIN ACTIONS (FIXED ENGINE)
+    // =========================================================================
 
     // Load the modification form.
     [HttpGet]
@@ -243,10 +250,10 @@ public class SitesController : Controller
         return View(reservation);
     }
 
-    // Cancel / un-cancel / update (site + dates), with availability checks and a balance delta.
+    // Cancel / un-cancel / update (site + dates), with fresh availability checks and a balance delta.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction)
+    public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction, string? notes = null)
     {
         var res = await _db.Reservations
             .Include(r => r.User)
@@ -256,34 +263,54 @@ public class SitesController : Controller
 
         if (res == null) return NotFound();
 
+        // Keep dynamic list loaded for the form view dropdown parameters
         ViewBag.AllSites = await _db.Sites.Include(s => s.Category).ToListAsync();
 
+        // ❌ ACTION 1: CANCEL RESERVATION
         if (statusAction == "Cancel")
         {
             res.ReservationStatus = "Cancelled";
-            res.RefundedAmount = res.TotalCost;
+            res.CancelledAtUtc = DateTime.UtcNow;
+            res.RefundedAmount = res.TotalCost; // Dynamic fallback to total initial cost parameters
+            res.Notes = string.Empty;
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(ManageReservations));
         }
 
+        if (statusAction == "Complete")
+        {
+            res.ReservationStatus = "Completed";
+            res.Notes = string.Empty;
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(ManageReservations));
+        }
+
+        // 🔄 ACTION 2: UN-CANCEL / REACTIVATE EXISTING RESERVATION
         if (statusAction == "UnCancel")
         {
-            if (res.SiteId == null ||
-                !await _availability.IsSiteAvailableAsync(res.SiteId.Value, res.StartDate, res.FinishDate, ignoreReservationId: res.Id))
+            // FIX: Check availability against the selected window inside the form inputs, not the old historic window!
+            if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate, ignoreReservationId: res.Id))
             {
-                ModelState.AddModelError("", "Cannot un-cancel: assign an available site for those dates first.");
+                ModelState.AddModelError("", "Cannot reactivate: The selected site is occupied or blocked for those dates.");
                 return View(res);
             }
 
+            int nights = Math.Max(1, (finishDate - startDate).Days);
+            res.SiteId = siteId;
+            res.StartDate = startDate;
+            res.FinishDate = finishDate;
+            res.TotalCost = nights * res.DailyRate;
             res.ReservationStatus = "Active";
-            res.RefundedAmount = 0m;
-            await _db.SaveChangesAsync();
+            res.RefundedAmount = 0m; // Reset cancellation refund flags completely
 
-            ViewBag.BalanceMessage = "Reservation successfully reactivated to Active status.";
+            await _db.SaveChangesAsync();
+            res.Site = await _db.Sites.FindAsync(siteId);
+
+            ViewBag.BalanceMessage = "Reservation successfully reactivated to Active status tracking workflows.";
             return View(res);
         }
 
-        // Update: validate dates + availability, then recalculate the balance delta.
+        // ⚙️ ACTION 3: STANDARD EDIT MODIFICATION (DATES, SITES, & REFUND PRICING)
         if (finishDate <= startDate)
         {
             ModelState.AddModelError("", "Departure must be after arrival.");
@@ -292,28 +319,170 @@ public class SitesController : Controller
 
         if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate, ignoreReservationId: res.Id))
         {
-            ModelState.AddModelError("", "The selected site is not available for those dates.");
+            ModelState.AddModelError("", "The selected campsite is not available for those specific dates.");
             return View(res);
         }
 
-        int originalNights = (res.FinishDate - res.StartDate).Days;
-        int newNights = (finishDate - startDate).Days;
+        // Mathematical pricing differences engine
+        int originalNights = Math.Max(1, (res.FinishDate - res.StartDate).Days);
+        int newNights = Math.Max(1, (finishDate - startDate).Days);
         decimal deltaBalance = (newNights - originalNights) * res.DailyRate;
 
         res.SiteId = siteId;
         res.StartDate = startDate;
         res.FinishDate = finishDate;
         res.TotalCost = newNights * res.DailyRate;
+
+        // FIXED: Log automated refund values if the stay was shortened (negative delta balance value)
+        if (deltaBalance < 0)
+        {
+            res.RefundedAmount = Math.Abs(deltaBalance);
+        }
+        else
+        {
+            res.RefundedAmount = 0m; // Additional payments made, clear residual refund properties
+        }
+
+        // Handle implicit un-cancellations if parameters are edited while flagged as Cancelled
         if (res.ReservationStatus == "Cancelled") res.ReservationStatus = "Active";
 
         await _db.SaveChangesAsync();
-
         res.Site = await _db.Sites.FindAsync(siteId);
 
         ViewBag.BalanceMessage = deltaBalance >= 0
             ? $"Changes applied successfully. Additional payment required: ${deltaBalance:F2}."
-            : $"Changes applied successfully. Refund calculated: ${Math.Abs(deltaBalance):F2}.";
+            : $"Changes applied successfully. Automatic refund calculated and saved: ${Math.Abs(deltaBalance):F2}.";
 
         return View(res);
+    }
+
+    // =========================================================================
+    // Walk-In Reservation Process
+    // =========================================================================
+
+    [HttpGet]
+    public async Task<IActionResult> WalkIn()
+    {
+        ViewBag.AllSites = await _db.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
+        return View(new Reservation
+        {
+            StartDate = DateTime.Today,
+            FinishDate = DateTime.Today.AddDays(1),
+            RvLength = 30
+        });
+    }
+
+// JSON endpoint to verify if a user exists by email or phone
+    [HttpGet]
+    public async Task<IActionResult> CheckUser(string email, string phone)
+    {
+        var trimmedEmail = email?.Trim().ToLower();
+        var trimmedPhone = phone?.Trim();
+
+        User? user = null;
+        if (!string.IsNullOrEmpty(trimmedEmail))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == trimmedEmail);
+        }
+        if (user == null && !string.IsNullOrEmpty(trimmedPhone))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Phone == trimmedPhone);
+        }
+
+        return Json(new { exists = user != null, name = user?.Name });
+    }
+
+   [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> WalkIn(string customerName, string customerEmail, string customerPhone, int siteId, DateTime startDate, DateTime finishDate, int rvLength, bool registerNew = false)
+    {
+        ViewBag.AllSites = await _db.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
+
+        if (finishDate <= startDate)
+        {
+            ModelState.AddModelError("", "Departure must be after arrival.");
+            return View();
+        }
+
+        if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate))
+        {
+            ModelState.AddModelError("", "The selected site is not available for those dates.");
+            return View();
+        }
+
+        var trimmedEmail = customerEmail?.Trim().ToLower();
+        var trimmedPhone = customerPhone?.Trim();
+
+        User? user = null;
+        if (!string.IsNullOrEmpty(trimmedEmail))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == trimmedEmail);
+        }
+        if (user == null && !string.IsNullOrEmpty(trimmedPhone))
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Phone == trimmedPhone);
+        }
+
+        // If user doesn't exist and registration hasn't been confirmed yet
+        if (user == null && !registerNew)
+        {
+            // Pass values back to repopulate the form and trigger the confirmation pop-up
+            ViewBag.TriggerUserPrompt = true;
+            ViewBag.CustomerName = customerName;
+            ViewBag.CustomerEmail = customerEmail;
+            ViewBag.CustomerPhone = customerPhone;
+            ViewBag.SiteId = siteId;
+            ViewBag.StartDate = startDate.ToString("yyyy-MM-dd");
+            ViewBag.FinishDate = finishDate.ToString("yyyy-MM-dd");
+            ViewBag.RvLength = rvLength;
+
+            ModelState.AddModelError("", "Customer not found in the system.");
+            return View();
+        }
+
+        // If user didn't exist but registration was confirmed, create the new user record
+        if (user == null)
+        {
+            var fallbackEmail = string.IsNullOrEmpty(trimmedEmail) ? $"{Guid.NewGuid().ToString().Substring(0, 8)}@walkin.local" : trimmedEmail;
+            user = new User
+            {
+                Name = string.IsNullOrWhiteSpace(customerName) ? "Walk-In Guest" : customerName.Trim(),
+                Email = fallbackEmail,
+                Phone = trimmedPhone ?? string.Empty
+            };
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+        }
+
+        // Fetch site and calculate pricing using category pricing
+        var site = await _db.Sites.FindAsync(siteId);
+        var today = DateTime.Today;
+        var categoryPrice = await _db.CategoryPrices
+            .Where(p => p.CategoryId == site.CategoryId && p.StartDate <= today && (p.EndDate == null || p.EndDate >= today))
+            .OrderByDescending(p => p.StartDate)
+            .FirstOrDefaultAsync();
+
+        decimal dailyRate = categoryPrice?.Price ?? 0m;
+        int nights = Math.Max(1, (finishDate - startDate).Days);
+
+        var reservation = new Reservation
+        {
+            UserId = user.Id,
+            SiteId = siteId,
+            StartDate = startDate,
+            FinishDate = finishDate,
+            RvLength = rvLength,
+            ReservationStatus = "Active",
+            DailyRate = dailyRate,
+            TotalCost = nights * dailyRate,
+            RefundedAmount = 0m,
+            PriceModifier = 0m
+        };
+
+        _db.Reservations.Add(reservation);
+        await _db.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Walk-in reservation #{reservation.Id} successfully created for {user.Name}!";
+        return RedirectToAction(nameof(ManageReservations));
     }
 }

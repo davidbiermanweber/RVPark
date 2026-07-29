@@ -126,7 +126,7 @@ public class CustomerAccountController : Controller
         }
 
         await SignInCustomerAsync(user);
-        return RedirectToAction("Search", "Availability");
+        return RedirectToAction("Search", "CustomerBooking");
     }
 
     [HttpPost]
@@ -175,14 +175,42 @@ public class CustomerAccountController : Controller
         var user = await CurrentUserAsync();
         if (user == null) return Challenge();
 
+        var cutoff = DateTime.UtcNow.AddMinutes(-10);
+
         var reservations = await _db.Reservations
-            .Where(r => r.UserId == user.Id)
+            .Where(r => r.UserId == user.Id && (
+                !r.ReservationStatus.Contains("Cancelled") ||
+                (r.CancelledAtUtc != null && r.CancelledAtUtc > cutoff)))
             .Include(r => r.Site)!.ThenInclude(s => s!.Category)
             .Include(r => r.ReservationFees)!.ThenInclude(rf => rf.Fee)
             .OrderByDescending(r => r.StartDate)
             .ToListAsync();
 
         return View(reservations);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveReservationNotes(int id, string notes)
+    {
+        var user = await CurrentUserAsync();
+        if (user == null) return Challenge();
+
+        var reservation = await _db.Reservations.FirstOrDefaultAsync(r => r.Id == id && r.UserId == user.Id);
+        if (reservation == null) return NotFound();
+
+        var trimmedNotes = (notes ?? string.Empty).Trim();
+        reservation.Notes = trimmedNotes;
+
+        if (reservation.ReservationStatus.Contains("Cancelled", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(reservation.ReservationStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            reservation.Notes = string.Empty;
+        }
+
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(MyReservations));
     }
 
     // ---------- Password reset (G2) ----------

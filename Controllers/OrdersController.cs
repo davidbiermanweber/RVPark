@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 
+[EmployeeOnly]
 public class OrdersController : Controller
 {
     private readonly AppDbContext _db;

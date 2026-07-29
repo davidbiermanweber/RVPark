@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,21 +10,25 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/RvParkApp.styles.css" asp-append-version="true" />
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">RvParkApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        <!-- All -->
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
+                        @* DYNAMIC UPDATED NAVIGATION: PERMANENTLY ACCESSIBLE TO THE PUBLIC *@
                         <li class="nav-item">
+<<<<<<< HEAD
                             <a class="nav-link text-primary fw-bold" asp-controller="Availability" asp-action="Search">🔍 Find a Site</a>
                         </li>
                         <li class="nav-item">
@@ -62,7 +67,68 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-controller="Orders" asp-action="Index">Orders</a>
+=======
+                            <a class="nav-link text-dark fw-bold text-primary" asp-controller="CustomerBooking"
+                               asp-action="Search">🔍 Book a Campsite</a>
+>>>>>>> f3f9dcf42acc93bdc44eb391ee7490df06037484
                         </li>
+                        @*Below is commented out since bottom nav-bar already has privacy link in-place*@
+                        @* <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home"
+                               asp-action="Privacy">Privacy</a>
+                        </li> *@
+                        <!-- All Employees -->
+                        @if (User.Identity?.IsAuthenticated == true &&
+                                User.FindFirst("Role")?.Value == "Employee")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">Users</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Categories" asp-action="Index">Categories</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="EmployeeReservation" asp-action="Index">
+                                    Employee Reservations
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Orders" asp-action="Index">Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Payment" asp-action="Index">Payment</a>
+                            </li>
+                        }
+                        <!-- Admin -->
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            var levelValue = User.FindFirst("AccessLevel")?.Value;
+                            if (int.TryParse(levelValue, out int accessLevel) && accessLevel >= 3)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Sites" asp-action="Index">Sites</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Fee" asp-action="Index">Fees</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="ParkPolicy" asp-action="Edit">Policies</a>
+                                </li>
+                                <!-- 💡 ADDITION: Step 5 Administrative Testing Entry Link -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-primary fw-bold" asp-area="" asp-controller="Sites"
+                                       asp-action="ManageReservations">📋 Manage Reservations</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-primary fw-bold"
+                                       asp-controller="ReservationReport"
+                                       asp-action="Index">
+                                        📊 Reservation Reports
+                                    </a>
+                                </li>
+                            }
+                        }
+
                     </ul>
                     <ul class="navbar-nav">
                         @{
@@ -72,55 +138,63 @@
                         @if (isAuthed && role == "Customer")
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="MyReservations">My Reservations</a>
+                                <a class="nav-link text-dark" asp-controller="CustomerAccount"
+                                   asp-action="MyReservations">My Reservations</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="Profile">👤 @(User.FindFirst("Name")?.Value ?? "Profile")</a>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="CustomerAccount" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Sign out</button>
-                                </form>
-                            </li>
-                        }
+                                <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="Profile">👤
+                                    @(User.FindFirst("Name")?.Value ?? "Profile")</a>
+                                </li>
+                                <li class="nav-item">
+                                    <form asp-controller="CustomerAccount" asp-action="Logout" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-link nav-link text-dark">Sign out</button>
+                                    </form>
+                                </li>
+                            }
                         else if (isAuthed)
-                        {
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Staff sign out</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="Register">Register</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="Login">Sign in</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Account" asp-action="Dashboard">Dashboard</a>
+                                </li>
+                                <li class="nav-item">
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-link nav-link text-dark">Sign Out</button>
+                                    </form>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="CustomerAccount"
+                                       asp-action="Register">Register</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="CustomerAccount" asp-action="Login">Sign
+                                        in</a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+            <div class="container">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - RvParkApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
+            <footer class="border-top footer text-muted">
+                <div class="container">
+                    &copy; 2026 - RvParkApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                </div>
+            </footer>
+            <script src="~/lib/jquery/dist/jquery.min.js"></script>
+            <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+            <script src="~/js/site.js" asp-append-version="true"></script>
+            @await RenderSectionAsync("Scripts", required: false)
+        </body>
+
+    </html>

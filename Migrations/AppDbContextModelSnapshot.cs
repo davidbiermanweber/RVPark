@@ -16,7 +16,7 @@ namespace RvParkApp.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -243,11 +243,18 @@ namespace RvParkApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("DailyRate")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("FinishDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("PriceModifier")
                         .HasColumnType("decimal(18,2)");
@@ -489,6 +496,19 @@ namespace RvParkApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 5738,
+                            Affiliation = 7,
+                            Email = "test@example.com",
+                            IsEmailVerified = true,
+                            MilitaryStatus = "Test",
+                            Name = "Test Customer",
+                            PasswordHash = "password",
+                            Phone = "555-0000"
+                        });
                 });
 
             modelBuilder.Entity("CategoryPrice", b =>

@@ -1,8 +1,124 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model IEnumerable<Site>
+@{
+    ViewData["Title"] = "Welcome to FamCamp";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero Section -->
+<div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center">
+    <div class="container-fluid py-3">
+        <h1 class="display-5 fw-bold text-success">🌲 Welcome to Hill AFB RV Park</h1>
+        <p class="col-md-8 fs-4 mx-auto text-muted">
+            Your getaway starts here. Explore our scenic sites, check availability, and book your unforgettable stay today.
+        </p>
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <a class="btn btn-success btn-lg px-4 gap-3 fw-bold" asp-controller="CustomerReservation" asp-action="Create">
+                📅 Book a Site Now
+            </a>
+            @if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                <a class="btn btn-outline-primary btn-lg px-4" asp-controller="CustomerAccount" asp-action="Login">
+                    🔐 Customer Sign In
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Featured Sites Section -->
+<div class="container my-5">
+    <h2 class="text-center mb-4 fw-bold">Explore Our Available Sites</h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            No sites are currently available to display. Please check back later!
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var site in Model)
+            {
+                // Grab the first photo's filename if available, otherwise use a placeholder
+                var firstPhoto = site.Photos?.FirstOrDefault()?.FileName;
+                var displayImage = string.IsNullOrEmpty(firstPhoto) ? "/images/placeholder-site.jpg" : firstPhoto;
+
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0">
+                        <img src="@displayImage" 
+                             class="card-img-top" 
+                             style="height: 200px; object-fit: cover;" 
+                             alt="@site.Name" />
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-dark">@site.Name</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@site.Category?.Name</h6>
+                            
+                            <p class="card-text small text-secondary mt-2">
+                                @(string.IsNullOrEmpty(site.Description) ? "A wonderful location for your next outdoor adventure." : site.Description)
+                            </p>
+
+                            <ul class="list-unstyled mt-auto mb-3 small text-muted">
+                                <li><strong>Max RV Length:</strong> @(site.MaxRvLength == 0 ? "Any Size" : site.MaxRvLength + " ft")</li>
+                                <li><strong>Status:</strong> <span class="badge bg-success">Available</span></li>
+                            </ul>
+
+                            @* <a asp-controller="CustomerReservation" asp-action="Create" asp-route-siteId="@site.Id" class="btn btn-outline-success w-100 mt-auto">
+                                Select This Site
+                            </a> *@
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<!-- Rates & Policies Section -->
+<div class="container my-5 py-4 bg-light rounded-3 shadow-sm">
+    <div class="row px-3">
+        <!-- Rates Column -->
+        <div class="col-md-6 mb-4 mb-md-0">
+            <h3 class="fw-bold text-success mb-3">🏷️ Current Nightly Rates</h3>
+            @if (ViewBag.Rates != null && ((IEnumerable<CategoryPrice>)ViewBag.Rates).Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle bg-white rounded shadow-sm">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Category</th>
+                                <th>Nightly Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rate in (IEnumerable<CategoryPrice>)ViewBag.Rates)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@rate.Category?.Name</td>
+                                    <td class="text-success fw-bold">$@rate.Price.ToString("F2") / night</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">Rates are currently being updated. Please check back soon!</p>
+            }
+        </div>
+
+        <!-- Policies Column -->
+        <div class="col-md-6">
+            <h3 class="fw-bold text-success mb-3">📜 Park Policies & Rules</h3>
+            <div class="p-3 bg-white rounded shadow-sm border">
+                <ul class="list-unstyled mb-0 text-secondary small" style="line-height: 1.8;">
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Check-in Time:</strong> 2:00 PM onwards.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Check-out Time:</strong> By 11:00 AM on departure day.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Quiet Hours:</strong> Strictly observed from 10:00 PM to 7:00 AM.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Cancellation:</strong> Cancellations must be made at least 48 hours prior to arrival for a full refund.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Pets:</strong> Pets are welcome but must remain leashed and attended at all times.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>

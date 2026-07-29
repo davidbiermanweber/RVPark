@@ -1,15 +1,26 @@
 ﻿@model IEnumerable<Reservation>
 @{
     ViewData["Title"] = "Master Reservation List";
+    var allSites = ViewBag.AllSites as List<Site> ?? new List<Site>();
 }
 
 <div class="container mt-4">
     <h2 class="mb-4">📋 Reservation Central Administration</h2>
 
+    <a asp-controller="Sites" asp-action="WalkIn" class="btn btn-success mb-3">➕ Process Walk-In</a>
+    @if (ViewBag.BalanceMessage != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+            ℹ️ @ViewBag.BalanceMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <!-- Search inputs satisfying requirements -->
     <form method="get" asp-action="ManageReservations" class="row g-2 mb-4">
         <div class="col-md-9">
-            <input type="text" name="searchString" value="@ViewBag.SearchString" class="form-control" placeholder="Search by reservation number or customer details..." />
+            <input type="text" name="searchString" value="@ViewBag.SearchString" class="form-control"
+                   placeholder="Search by reservation number or customer details..." />
         </div>
         <div class="col-md-3">
             <button type="submit" class="btn btn-primary w-100">🔍 Filter</button>
@@ -24,6 +35,7 @@
                 <th>Assigned Site</th>
                 <th>Timeline Dates</th>
                 <th>Status</th>
+                <th>Customer Notes</th>
                 <th>Total Value</th>
                 <th>Actions</th>
             </tr>
@@ -31,6 +43,7 @@
         <tbody>
             @foreach (var item in Model)
             {
+                var isCancelled = item.ReservationStatus != null && item.ReservationStatus.Contains("Cancelled");
                 <tr>
                     <td><strong>#@item.Id</strong></td>
                     <td>@item.User?.Name</td>
@@ -51,22 +64,142 @@
 
                     <!-- Status badge -->
                     <td>
-                        @if (item.ReservationStatus != null && item.ReservationStatus.Contains("Cancelled"))
+                        @if (isCancelled)
                         {
-                            <span class="badge bg-danger">Cancelled</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success">Active</span>
-                        }
-                    </td>
+                            <div>
+                                <span class="badge bg-danger">Cancelled</span>
+                                @if (item.CancelledAtUtc != null)
+                                {
+                                    <div class="small text-muted mt-1">Cancelled
+                                        @item.CancelledAtUtc.Value.ToLocalTime().ToString("g")</div>
+                                    }
+                                </div>
+                            }
+                        else if (item.ReservationStatus != null && item.ReservationStatus.Contains("Paid via"))
+                            {
+                                <span class="badge bg-info text-dark">@item.ReservationStatus</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">@item.ReservationStatus</span>
+                            }
+                        </td>
 
-                    <td>$@item.TotalCost.ToString("F2")</td>
-                    <td>
-                        <a asp-action="EditReservation" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">⚙️ Edit</a>
-                    </td>
-                </tr>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(item.Notes))
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                            else
+                            {
+                                <span class="text-dark">@item.Notes</span>
+                            }
+                        </td>
+                        <td>$@item.TotalCost.ToString("F2")</td>
+                        <td>
+                            <!-- TRIGGER INTERACTIVE ADMIN MANAGEMENT MODAL -->
+                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
+                                    data-bs-target="#adminEditModal-@item.Id">
+                                ⚙️ Manage
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @* FIXED SEPARATION ZONE: Renders modal layers outside table blocks to eliminate mask depth transparency leaks *@
+        @foreach (var item in Model)
+        {
+            var isCancelled = item.ReservationStatus != null && item.ReservationStatus.Contains("Cancelled");
+
+            <div class="modal fade" id="adminEditModal-@item.Id" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+                <div class="modal-dialog">
+                    <form asp-controller="Sites" asp-action="EditReservation" asp-route-id="@item.Id" method="post"
+                          class="modal-content text-start">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-header bg-dark text-white">
+                            <h5 class="modal-title">Manage Reservation #@item.Id</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">Altering timeline windows automatically processes financial refunds or
+                                prints additional required balance metrics.</p>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Customer Profile</label>
+                                    <input type="text" class="form-control bg-light" value="@item.User?.Name (@item.User?.Email)"
+                                           readonly />
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold">Arrival</label>
+                                        <input type="date" name="startDate" class="form-control"
+                                               value="@item.StartDate.ToString("yyyy-MM-dd")" required />
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-bold">Departure</label>
+                                        <input type="date" name="finishDate" class="form-control"
+                                               value="@item.FinishDate.ToString("yyyy-MM-dd")" required />
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Assigned Campsite Plot</label>
+                                    <select name="siteId" class="form-select" required>
+                                        @foreach (var site in allSites)
+                                        {
+                                            if (item.SiteId == site.Id)
+                                            {
+                                                <option value="@site.Id" selected="selected">@site.Name (@site.Category?.Name)</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@site.Id">@site.Name (@site.Category?.Name)</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+
+                                @* DYNAMIC OPERATION DROPDOWN CONTROL WINDOW *@
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-primary">Availability & Status Modifier</label>
+                                    <select name="statusAction" class="form-select border-primary" required>
+                                        <option value="Update" selected="@(!isCancelled)">🟢 Keep Active / Apply Changes</option>
+                                        <option value="Cancel" selected="@isCancelled">❌ Cancel Booking & Issue Auto-Refund</option>
+                                        <option value="Complete">✅ Mark Reservation as Completed</option>
+                                        <option value="UnCancel">🔄 Reactivate Cancelled Booking Status</option>
+                                        <option value="Maintenance">🛠️ Shift Campsite to Maintenance Block</option>
+                                        <option value="Unavailable">🚫 Shift Campsite to Temporarily Unavailable</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-info">Customer Notes</label>
+                                    @if (string.IsNullOrWhiteSpace(item.Notes))
+                                    {
+                                        <div class="text-muted small">No notes have been added for this reservation.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="border rounded p-2 bg-light">@item.Notes</div>
+                                    }
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Status Log / Block Reason Notes (Optional)</label>
+                                    <input type="text" name="notes" class="form-control"
+                                           placeholder="e.g. Broken utility line, winterizing, guest request" />
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary fw-bold">Save Administrative Override</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             }
-        </tbody>
-    </table>
-</div>
+        </div>
