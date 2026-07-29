@@ -1,60 +1,75 @@
 @model IEnumerable<Site>
-@{ ViewData["Title"] = "Sites"; }
+@{
+    ViewData["Title"] = "Welcome to FamCamp";
+}
 
-<h2>Sites</h2>
-<a asp-action="Create" class="btn btn-primary mb-3">Add Site</a>
-<a asp-action="Availability" class="btn btn-outline-primary mb-3">📅 Availability Grid</a>
-<a asp-action="ManageReservations" class="btn btn-outline-secondary mb-3">📋 Reservations</a>
+<!-- Hero Section -->
+<div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center">
+    <div class="container-fluid py-3">
+        <h1 class="display-5 fw-bold text-success">🌲 Welcome to FamCamp RV Park</h1>
+        <p class="col-md-8 fs-4 mx-auto text-muted">
+            Your getaway starts here. Explore our scenic sites, check availability, and book your unforgettable stay today.
+        </p>
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <a class="btn btn-success btn-lg px-4 gap-3 fw-bold" asp-controller="CustomerReservation" asp-action="Create">
+                📅 Book a Site Now
+            </a>
+            @if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                <a class="btn btn-outline-primary btn-lg px-4" asp-controller="CustomerAccount" asp-action="Login">
+                    🔐 Customer Sign In
+                </a>
+            }
+        </div>
+    </div>
+</div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Category</th>
-            <th>Max RV (ft)</th>
-            <th>Active</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var site in Model)
-        {
-            <tr>
-                <td>@site.Name</td>
-                <td>@site.Description</td>
-                <td>@site.Category?.Name</td>
-                <td>@(site.MaxRvLength == 0 ? "—" : site.MaxRvLength.ToString())</td>
-                <td>
-                    @if (site.IsActive)
-                    {
-                        <span class="badge bg-success">Active</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">Inactive</span>
-                    }
-                </td>
-                <td>
-                    <a asp-controller="SitePhotos" asp-action="Index" asp-route-siteId="@site.Id" class="btn btn-info btn-sm me-2">Photos</a>
-                    <a asp-action="Blocks" asp-route-siteId="@site.Id" class="btn btn-warning btn-sm me-2">Blocks</a>
-                    <a asp-action="Edit" asp-route-id="@site.Id" class="btn btn-warning btn-sm me-2">Edit</a>
-                    <form asp-action="Delete" asp-route-id="@site.Id" method="post" onsubmit="return confirm('Delete this site?');" style="display:inline;">
-                        <button type="submit" class="btn btn-danger btn-small">Delete</button>
-                    </form>
-                </td>
-                @if (site.Photos.Any())
-                {
-                    <tr>
-                        <td colspan="6">
-                            @foreach (var photo in site.Photos)
-                            {
-                                <img src="@photo.FileName" style="height:80px; width:120px; object-fit:cover; border-radius:4px;" />
-                            }
-                        </td>
-                    </tr>
-                }
-            </tr>
-        }
-    </tbody>
-</table>
+<!-- Featured Sites Section -->
+<div class="container my-5">
+    <h2 class="text-center mb-4 fw-bold">Explore Our Available Sites</h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            No sites are currently available to display. Please check back later!
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var site in Model)
+            {
+                // Grab the first photo's filename if available, otherwise use a placeholder
+                var firstPhoto = site.Photos?.FirstOrDefault()?.FileName;
+                var displayImage = string.IsNullOrEmpty(firstPhoto) ? "/images/placeholder-site.jpg" : firstPhoto;
+
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0">
+                        <img src="@displayImage" 
+                             class="card-img-top" 
+                             style="height: 200px; object-fit: cover;" 
+                             alt="@site.Name" />
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-dark">@site.Name</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@site.Category?.Name</h6>
+                            
+                            <p class="card-text small text-secondary mt-2">
+                                @(string.IsNullOrEmpty(site.Description) ? "A wonderful location for your next outdoor adventure." : site.Description)
+                            </p>
+
+                            <ul class="list-unstyled mt-auto mb-3 small text-muted">
+                                <li><strong>Max RV Length:</strong> @(site.MaxRvLength == 0 ? "Any Size" : site.MaxRvLength + " ft")</li>
+                                <li><strong>Status:</strong> <span class="badge bg-success">Available</span></li>
+                            </ul>
+
+                            <a asp-controller="CustomerReservation" asp-action="Create" asp-route-siteId="@site.Id" class="btn btn-outline-success w-100 mt-auto">
+                                Select This Site
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
