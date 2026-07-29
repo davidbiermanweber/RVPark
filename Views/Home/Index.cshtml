@@ -23,7 +23,7 @@
         </div>
     </div>
 </div>
-@* 
+
 <!-- Featured Sites Section -->
 <div class="container my-5">
     <h2 class="text-center mb-4 fw-bold">Explore Our Available Sites</h2>
@@ -63,13 +63,62 @@
                                 <li><strong>Status:</strong> <span class="badge bg-success">Available</span></li>
                             </ul>
 
-                            <a asp-controller="CustomerReservation" asp-action="Create" asp-route-siteId="@site.Id" class="btn btn-outline-success w-100 mt-auto">
+                            @* <a asp-controller="CustomerReservation" asp-action="Create" asp-route-siteId="@site.Id" class="btn btn-outline-success w-100 mt-auto">
                                 Select This Site
-                            </a>
+                            </a> *@
                         </div>
                     </div>
                 </div>
             }
         </div>
     }
-</div> *@
+</div>
+<!-- Rates & Policies Section -->
+<div class="container my-5 py-4 bg-light rounded-3 shadow-sm">
+    <div class="row px-3">
+        <!-- Rates Column -->
+        <div class="col-md-6 mb-4 mb-md-0">
+            <h3 class="fw-bold text-success mb-3">🏷️ Current Nightly Rates</h3>
+            @if (ViewBag.Rates != null && ((IEnumerable<CategoryPrice>)ViewBag.Rates).Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle bg-white rounded shadow-sm">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Category</th>
+                                <th>Nightly Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rate in (IEnumerable<CategoryPrice>)ViewBag.Rates)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@rate.Category?.Name</td>
+                                    <td class="text-success fw-bold">$@rate.Price.ToString("F2") / night</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">Rates are currently being updated. Please check back soon!</p>
+            }
+        </div>
+
+        <!-- Policies Column -->
+        <div class="col-md-6">
+            <h3 class="fw-bold text-success mb-3">📜 Park Policies & Rules</h3>
+            <div class="p-3 bg-white rounded shadow-sm border">
+                <ul class="list-unstyled mb-0 text-secondary small" style="line-height: 1.8;">
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Check-in Time:</strong> 2:00 PM onwards.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Check-out Time:</strong> By 11:00 AM on departure day.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Quiet Hours:</strong> Strictly observed from 10:00 PM to 7:00 AM.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Cancellation:</strong> Cancellations must be made at least 48 hours prior to arrival for a full refund.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Pets:</strong> Pets are welcome but must remain leashed and attended at all times.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
