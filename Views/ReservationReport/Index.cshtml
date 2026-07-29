@@ -37,10 +37,48 @@
 
     </div>
 </form>
-
-
 @if (Model != null)
 {
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center border-primary">
+                <div class="card-body">
+                    <h6>Total Reservations</h6>
+                    <h3>@(Model.Completed.Count + Model.InProgress.Count + Model.Upcoming.Count)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center border-success">
+                <div class="card-body">
+                    <h6>Revenue</h6>
+                    <h3>$@Model.TotalRevenue.ToString("N2")</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center border-warning">
+                <div class="card-body">
+                    <h6>Occupied Sites</h6>
+                    <h3>@Model.OccupiedSites / @Model.TotalSites</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center border-info">
+                <div class="card-body">
+                    <h6>Occupancy</h6>
+                    <h3>@Model.OccupancyRate.ToString("0")%</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <h3 class="mt-4">Completed Reservations</h3>
 
     @if (Model.Completed.Any())
