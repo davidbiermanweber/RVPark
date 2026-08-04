@@ -11,7 +11,7 @@
             Your getaway starts here. Explore our scenic sites, check availability, and book your unforgettable stay today.
         </p>
         <div class="mt-4 d-flex justify-content-center gap-3">
-            <a class="btn btn-success btn-lg px-4 gap-3 fw-bold" asp-controller="CustomerReservation" asp-action="Create">
+            <a class="btn btn-success btn-lg px-4 gap-3 fw-bold" asp-controller="CustomerBooking" asp-action="Search">
                 📅 Book a Site Now
             </a>
             @if (!User.Identity?.IsAuthenticated ?? true)
@@ -63,7 +63,7 @@
                                 <li><strong>Status:</strong> <span class="badge bg-success">Available</span></li>
                             </ul>
 
-                            @* <a asp-controller="CustomerReservation" asp-action="Create" asp-route-siteId="@site.Id" class="btn btn-outline-success w-100 mt-auto">
+                            @* <a asp-controller="CustomerReservation" asp-action="Search" asp-route-siteId="@site.Id" class="btn btn-outline-success w-100 mt-auto">
                                 Select This Site
                             </a> *@
                         </div>
