@@ -25,12 +25,19 @@ namespace RvParkApp.Controllers
         [HttpPost]
         public IActionResult Register(Employee employee)
         {
-            if (ModelState.IsValid)
+            if (!string.IsNullOrWhiteSpace(employee.Name) &&
+                !string.IsNullOrWhiteSpace(employee.EmployeeId) &&
+                !string.IsNullOrWhiteSpace(employee.Username) &&
+                !string.IsNullOrWhiteSpace(employee.Password))
             {
+                employee.Password = _passwords.Hash(employee.Password);
+                employee.AccessLevel = Math.Clamp(employee.AccessLevel, 1, 3);
+                employee.IsLocked = false;
                 _db.Employees.Add(employee);
                 _db.SaveChanges();
                 return RedirectToAction("Login");
             }
+
             return View(employee);
         }
 
@@ -42,6 +49,12 @@ namespace RvParkApp.Controllers
         public async Task<IActionResult> Login(string username, string password)
         {
             var user = _db.Employees.FirstOrDefault(u => u.Username == username);
+
+            if (user != null && user.IsLocked)
+            {
+                ViewBag.Error = "This employee account has been locked.";
+                return View();
+            }
 
             // Verify against the (possibly legacy-plaintext) stored password. On success
             // with a legacy value, rehash it now so plaintext is retired on next login.
@@ -65,7 +78,7 @@ namespace RvParkApp.Controllers
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
                 await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme, 
+                    CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity));
 
                 return RedirectToAction("Dashboard");
@@ -90,19 +103,153 @@ namespace RvParkApp.Controllers
             return RedirectToAction("Login");
         }
 
-
         // GET: /Account/ManageEmployees
         [Authorize]
         public IActionResult ManageEmployees()
         {
-            // Security Check: Kick them out if they aren't Level 3
             if (User.FindFirst("AccessLevel")?.Value != "3")
             {
                 return Forbid();
             }
 
-            var employees = _db.Employees.ToList();
+            var employees = _db.Employees.OrderBy(e => e.Name).ToList();
             return View(employees);
+        }
+
+        // GET: /Account/CreateEmployee
+        [Authorize]
+        public IActionResult CreateEmployee()
+        {
+            if (User.FindFirst("AccessLevel")?.Value != "3") return Forbid();
+            return View(new Employee());
+        }
+
+        // POST: /Account/CreateEmployee
+        [HttpPost]
+        [Authorize]
+        public IActionResult CreateEmployee(Employee employee)
+        {
+            if (User.FindFirst("AccessLevel")?.Value != "3") return Forbid();
+
+            if (string.IsNullOrWhiteSpace(employee.Name) ||
+                string.IsNullOrWhiteSpace(employee.EmployeeId) ||
+                string.IsNullOrWhiteSpace(employee.Username) ||
+                string.IsNullOrWhiteSpace(employee.Password))
+            {
+                ModelState.AddModelError(string.Empty, "All employee fields are required.");
+                return View(employee);
+            }
+
+            if (_db.Employees.Any(e => e.Username == employee.Username))
+            {
+                ModelState.AddModelError(nameof(employee.Username), "That username is already in use.");
+                return View(employee);
+            }
+
+            employee.Password = _passwords.Hash(employee.Password);
+            employee.AccessLevel = Math.Clamp(employee.AccessLevel, 1, 3);
+            employee.IsLocked = false;
+            _db.Employees.Add(employee);
+            _db.SaveChanges();
+
+            return RedirectToAction("ManageEmployees");
+        }
+
+        // GET: /Account/EditEmployee/{id}
+        [Authorize]
+        public IActionResult EditEmployee(int id)
+        {
+            if (User.FindFirst("AccessLevel")?.Value != "3") return Forbid();
+
+            var employee = _db.Employees.Find(id);
+            if (employee == null) return NotFound();
+
+            return View(employee);
+        }
+
+        // POST: /Account/EditEmployee
+        [HttpPost]
+        [Authorize]
+        public IActionResult EditEmployee(int id, Employee employee, string? newPassword)
+        {
+            if (User.FindFirst("AccessLevel")?.Value != "3") return Forbid();
+
+            var existingEmployee = _db.Employees.Find(id);
+            if (existingEmployee == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(employee.Name) ||
+                string.IsNullOrWhiteSpace(employee.EmployeeId) ||
+                string.IsNullOrWhiteSpace(employee.Username))
+            {
+                ModelState.AddModelError(string.Empty, "Name, employee ID and username are required.");
+                return View(existingEmployee);
+            }
+
+            if (_db.Employees.Any(e => e.Username == employee.Username && e.Id != id))
+            {
+                ModelState.AddModelError(nameof(employee.Username), "That username is already in use.");
+                return View(existingEmployee);
+            }
+
+            existingEmployee.Name = employee.Name;
+            existingEmployee.EmployeeId = employee.EmployeeId;
+            existingEmployee.Username = employee.Username;
+            existingEmployee.AccessLevel = Math.Clamp(employee.AccessLevel, 1, 3);
+
+            if (existingEmployee.AccessLevel == 3)
+            {
+                employee.IsLocked = false;
+            }
+
+            existingEmployee.IsLocked = employee.IsLocked;
+
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                existingEmployee.Password = _passwords.Hash(newPassword);
+            }
+
+            _db.SaveChanges();
+            return RedirectToAction("ManageEmployees");
+        }
+
+        // POST: /Account/DeleteEmployee/{id}
+        [HttpPost]
+        [Authorize]
+        public IActionResult DeleteEmployee(int id)
+        {
+            if (User.FindFirst("AccessLevel")?.Value != "3") return Forbid();
+
+            var employee = _db.Employees.Find(id);
+            if (employee != null)
+            {
+                _db.Employees.Remove(employee);
+                _db.SaveChanges();
+            }
+
+            return RedirectToAction("ManageEmployees");
+        }
+
+        // POST: /Account/ToggleLockEmployee/{id}
+        [HttpPost]
+        [Authorize]
+        public IActionResult ToggleLockEmployee(int id)
+        {
+            if (User.FindFirst("AccessLevel")?.Value != "3") return Forbid();
+
+            var employee = _db.Employees.Find(id);
+            if (employee != null)
+            {
+                if (employee.AccessLevel == 3)
+                {
+                    TempData["ErrorMessage"] = "Administrators cannot be locked.";
+                    return RedirectToAction("ManageEmployees");
+                }
+
+                employee.IsLocked = !employee.IsLocked;
+                _db.SaveChanges();
+            }
+
+            return RedirectToAction("ManageEmployees");
         }
 
         // GET: /Account/EditAccessLevel/{id}
@@ -118,7 +265,6 @@ namespace RvParkApp.Controllers
         }
 
         // POST: /Account/EditAccessLevel
-        // POST: /Account/EditAccessLevel
         [HttpPost]
         [Authorize]
         public IActionResult EditAccessLevel(int id, int accessLevel)
@@ -129,14 +275,10 @@ namespace RvParkApp.Controllers
             if (employee != null)
             {
                 employee.AccessLevel = Math.Clamp(accessLevel, 1, 3);
-                
                 _db.SaveChanges();
             }
-            
+
             return RedirectToAction("ManageEmployees");
         }
-
-
     }
-    
 }

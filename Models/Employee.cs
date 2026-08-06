@@ -12,5 +12,6 @@ namespace RvParkApp.Models
         public string Username { get; set; }
         public string Password { get; set; }
         public int AccessLevel { get; set; }
+        public bool IsLocked { get; set; }
     }
 }

@@ -1,18 +1,24 @@
-<h2>Employee Login</h2>
-
-@if (ViewBag.Error != null)
-{
-    <p style="color:red;">@ViewBag.Error</p>
+@{
+    ViewData["Title"] = "Employee Sign In";
 }
 
-<form asp-action="Login" method="post">
-    <div>
-        <label>Username:</label>
-        <input type="text" name="username" required />
-    </div>
-    <div>
-        <label>Password:</label>
-        <input type="password" name="password" required />
-    </div>
-    <button type="submit" class="btn btn-success">Login</button>
-</form>
+<div class="container" style="max-width: 420px;">
+    <h2 class="mb-3">Employee sign in</h2>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    <form asp-action="Login" method="post">
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Sign in</button>
+    </form>
+</div>
