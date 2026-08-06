@@ -116,6 +116,16 @@ else
                                     <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#payModal-@r.Id">
                                         💵 Pay Cash/Check
                                     </button>
+                                    <button type="button" class="btn btn-sm btn-success flex-grow-1"
+                                            data-res-id="@r.Id"
+                                            data-amount="@r.TotalCost"
+                                            data-user-id="@r.UserId"
+                                            data-site-id="@(r.Site?.Id ?? 0)"
+                                            data-checkin="@r.StartDate.ToString("yyyy-MM-dd")"
+                                            data-checkout="@r.FinishDate.ToString("yyyy-MM-dd")"
+                                            data-bs-toggle="modal" data-bs-target="#stripeModal-@r.Id">
+                                        💳 Pay via Credit Card
+                                    </button>
                                     <form asp-controller="CustomerBooking" asp-action="Cancel" asp-route-id="@r.Id" method="post" class="d-inline flex-grow-1" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
                                         <button type="submit" class="btn btn-sm btn-outline-danger w-100">❌ Cancel</button>
                                     </form>
@@ -197,6 +207,31 @@ else
                                     </form>
                                 </div>
                             </div>
+
+                            @* POPUP MODAL: STRIPE CREDIT CARD PAYMENT *@
+                            <div class="modal fade" id="stripeModal-@r.Id" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">💳 Pay via Credit Card</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-1"><strong>Amount:</strong> @r.TotalCost.ToString("C")</p>
+                                            <p class="mb-3"><strong>Stay:</strong> @r.StartDate.ToString("MMM d") → @r.FinishDate.ToString("MMM d, yyyy")</p>
+                                            <div id="card-element-@r.Id" class="form-control p-2 mb-2"></div>
+                                            <div id="card-error-@r.Id" class="text-danger small"></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-success"
+                                                    onclick="payWithCard(@r.Id, @r.TotalCost, @r.UserId, @(r.Site?.Id ?? 0), '@r.StartDate.ToString("yyyy-MM-dd")', '@r.FinishDate.ToString("yyyy-MM-dd")', @r.Id)">
+                                                Confirm Payment
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         }
                     </div>
                 </div>
@@ -205,6 +240,7 @@ else
     </div>
 
     @section Scripts {
+        <script src="https://js.stripe.com/v3/"></script>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const searchName = document.getElementById("searchName");
@@ -214,40 +250,87 @@ else
 
                 function filterCards() {
                     const nameQuery = searchName.value.toLowerCase().trim();
-                    const dateQuery = searchDate.value; // Format: YYYY-MM-DD
+                    const dateQuery = searchDate.value;
 
                     cards.forEach(card => {
                         const siteName = card.getAttribute("data-site-name");
                         const startDate = card.getAttribute("data-start-date");
                         const finishDate = card.getAttribute("data-finish-date");
 
-                        // Check if name matches
                         const matchesName = nameQuery === "" || siteName.includes(nameQuery);
 
-                        // Check if the selected date falls within the reservation date range
                         let matchesDate = true;
                         if (dateQuery !== "") {
                             matchesDate = (dateQuery >= startDate && dateQuery <= finishDate);
                         }
 
-                        // Toggle visibility
-                        if (matchesName && matchesDate) {
-                            card.style.display = "";
-                        } else {
-                            card.style.display = "none";
-                        }
+                        card.style.display = (matchesName && matchesDate) ? "" : "none";
                     });
                 }
 
-                // Attach event listeners
                 searchName.addEventListener("input", filterCards);
                 searchDate.addEventListener("change", filterCards);
-
                 clearFilters.addEventListener("click", function () {
                     searchName.value = "";
                     searchDate.value = "";
-                    filterCards(); // Reset view
+                    filterCards();
                 });
+
+                const stripe = Stripe('@ViewBag.PublishableKey');
+                const cardElements = {};
+
+                document.querySelectorAll('[data-res-id]').forEach(btn => {
+                    const resId = btn.getAttribute('data-res-id');
+                    const modalEl = document.getElementById('stripeModal-' + resId);
+                    if (!modalEl) return;
+                    modalEl.addEventListener('shown.bs.modal', () => {
+                        if (!cardElements[resId]) {
+                            const elements = stripe.elements();
+                            cardElements[resId] = elements.create('card', { style: { base: { fontSize: '16px' } } });
+                            cardElements[resId].mount('#card-element-' + resId);
+                        }
+                    });
+                });
+
+                window.payWithCard = async function(resId, amount, userId, siteId, checkIn, checkOut, resDbId) {
+                    const errorEl = document.getElementById('card-error-' + resId);
+                    errorEl.textContent = '';
+
+                    const intentRes = await fetch('/Payment/CreatePaymentIntent', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount })
+                    });
+                    const { clientSecret } = await intentRes.json();
+
+                    const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+                        payment_method: { card: cardElements[resId] }
+                    });
+
+                    if (error) {
+                        errorEl.textContent = error.message;
+                        return;
+                    }
+
+                    await fetch('/Payment/SaveOrder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            customerId: userId,
+                            siteId: siteId,
+                            checkIn: checkIn,
+                            checkOut: checkOut,
+                            notes: '',
+                            amount: amount,
+                            paymentToken: paymentIntent.id,
+                            paymentMethod: 'Credit Card',
+                            customerEmail: '',
+                            reservationId: resDbId
+                        })
+                    });
+
+                    window.location.href = '/Payment/Success';
+                };
             });
         </script>
     }

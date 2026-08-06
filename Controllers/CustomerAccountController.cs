@@ -13,13 +13,15 @@ public class CustomerAccountController : Controller
     private readonly IPasswordService _passwords;
     private readonly IEmailSender _email;
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _config;
 
-    public CustomerAccountController(AppDbContext db, IPasswordService passwords, IEmailSender email, IWebHostEnvironment env)
+    public CustomerAccountController(AppDbContext db, IPasswordService passwords, IEmailSender email, IWebHostEnvironment env, IConfiguration config)
     {
         _db = db;
         _passwords = passwords;
         _email = email;
         _env = env;
+        _config = config;
     }
 
     // ---------- Registration + email verification (G1) ----------
@@ -174,6 +176,8 @@ public class CustomerAccountController : Controller
     {
         var user = await CurrentUserAsync();
         if (user == null) return Challenge();
+
+         ViewBag.PublishableKey = _config["stripe:publishable_key"];
 
         var cutoff = DateTime.UtcNow.AddMinutes(-10);
 
