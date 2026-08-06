@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
+using Microsoft.AspNetCore.Authorization;
 
 [EmployeeOnly]
 
@@ -23,6 +24,7 @@ public class PaymentController : Controller
         return View();
     }
 
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> CreatePaymentIntent([FromBody] PaymentRequest request)
     {
@@ -38,9 +40,11 @@ public class PaymentController : Controller
         return Json(new { clientSecret = intent.ClientSecret });
     }
 
+    [AllowAnonymous]
     public IActionResult Success() => View();
     public IActionResult Cancel() => View();
 
+    [AllowAnonymous]
     [HttpPost]
 public async Task<IActionResult> SaveOrder([FromBody] SaveOrderRequest request)
 {
@@ -52,7 +56,7 @@ public async Task<IActionResult> SaveOrder([FromBody] SaveOrderRequest request)
         CheckOut = request.CheckOut,
         Notes = request.Notes,
         Amount = request.Amount,
-        Status = "Paid"
+        Status = "Paid - Credit Card"
     };
     _db.Orders.Add(order);
     await _db.SaveChangesAsync();
@@ -65,6 +69,16 @@ public async Task<IActionResult> SaveOrder([FromBody] SaveOrderRequest request)
         Status = "succeeded"
     });
     await _db.SaveChangesAsync();
+
+    if (request.ReservationId.HasValue)
+{
+    var reservation = await _db.Reservations.FindAsync(request.ReservationId.Value);
+    if (reservation != null)
+    {
+        reservation.ReservationStatus = $"Paid via {request.PaymentMethod}";
+        await _db.SaveChangesAsync();
+    }
+}
 
     if (!string.IsNullOrEmpty(request.CustomerEmail))
     await _email.SendOrderConfirmationAsync(request.CustomerEmail, order.Id, order.Amount);
@@ -89,4 +103,6 @@ public class SaveOrderRequest
     public decimal Amount { get; set; }
     public string PaymentToken { get; set; } = string.Empty;
     public string CustomerEmail {get; set;} = string.Empty;
+    public int? ReservationId { get; set; }
+    public string PaymentMethod { get; set; } = "card";
 }

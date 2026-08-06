@@ -40,3 +40,15 @@ az webapp deploy --resource-group RvParkRG --name rvparkapp-group2 --src-path ./
 This is the url of the live site.
 https://rvparkapp-group2.azurewebsites.net
 
+
+Team 2
+
+Application URL: https://rvparkapp-group2.azurewebsites.net/
+
+Customer-level login credentials:  test@example.com pass: password
+
+Employee-level login credentials: username: employee password: password
+
+Administrator-level login credentials: username: admin password: password
+
+
