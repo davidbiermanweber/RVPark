@@ -18,6 +18,24 @@ namespace RvParkApp.Controllers
             _passwords = passwords;
         }
 
+        private bool CurrentUserIsSystemAdmin()
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrWhiteSpace(username)) return false;
+
+            var currentEmployee = _db.Employees.FirstOrDefault(e => e.Username == username);
+            return currentEmployee?.EmployeeId == "000001";
+        }
+
+        private bool IsCurrentEmployee(int employeeId)
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrWhiteSpace(username)) return false;
+
+            var currentEmployee = _db.Employees.FirstOrDefault(e => e.Username == username);
+            return currentEmployee?.Id == employeeId;
+        }
+
         // GET: /Account/Register
         public IActionResult Register() => View();
 
@@ -222,6 +240,18 @@ namespace RvParkApp.Controllers
             var employee = _db.Employees.Find(id);
             if (employee != null)
             {
+                if (IsCurrentEmployee(employee.Id))
+                {
+                    TempData["ErrorMessage"] = "The System Admin cannot delete their own account.";
+                    return RedirectToAction("ManageEmployees");
+                }
+
+                if (employee.AccessLevel == 3 && !CurrentUserIsSystemAdmin())
+                {
+                    TempData["ErrorMessage"] = "Only the System Admin can delete other administrators.";
+                    return RedirectToAction("ManageEmployees");
+                }
+
                 _db.Employees.Remove(employee);
                 _db.SaveChanges();
             }
@@ -239,9 +269,15 @@ namespace RvParkApp.Controllers
             var employee = _db.Employees.Find(id);
             if (employee != null)
             {
-                if (employee.AccessLevel == 3)
+                if (IsCurrentEmployee(employee.Id))
                 {
-                    TempData["ErrorMessage"] = "Administrators cannot be locked.";
+                    TempData["ErrorMessage"] = "The System Admin cannot lock their own account.";
+                    return RedirectToAction("ManageEmployees");
+                }
+
+                if (employee.AccessLevel == 3 && !CurrentUserIsSystemAdmin())
+                {
+                    TempData["ErrorMessage"] = "Only the System Admin can lock other administrators.";
                     return RedirectToAction("ManageEmployees");
                 }
 
