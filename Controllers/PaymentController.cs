@@ -80,8 +80,14 @@ public async Task<IActionResult> SaveOrder([FromBody] SaveOrderRequest request)
     }
 }
 
-    if (!string.IsNullOrEmpty(request.CustomerEmail))
-    await _email.SendOrderConfirmationAsync(request.CustomerEmail, order.Id, order.Amount);
+    var emailTo = request.CustomerEmail;
+    if (string.IsNullOrEmpty(emailTo) && request.CustomerId > 0)
+    {
+        var customer = await _db.Users.FindAsync(request.CustomerId);
+        if (customer != null) emailTo = customer.Email;
+    }
+    if (!string.IsNullOrEmpty(emailTo))
+        await _email.SendOrderConfirmationAsync(emailTo, order.Id, order.Amount);
 
     return Json(new { success = true });
 }
