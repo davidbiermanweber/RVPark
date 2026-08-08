@@ -1,0 +1,88 @@
+@model Site
+@{
+    ViewData["Title"] = $"Blocks — {Model.Name}";
+}
+
+<div class="container mt-4" style="max-width: 800px;">
+    <h2 class="mb-1">🚧 Availability Blocks</h2>
+    <p class="text-muted">Site: <strong>@Model.Name</strong></p>
+
+    @if (TempData["BlockError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["BlockError"]</div>
+    }
+
+    <div class="card shadow-sm p-3 mb-4">
+        <h5>Add a block</h5>
+        <form method="post" asp-action="Block" class="row g-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="siteId" value="@Model.Id" />
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Start Date</label>
+                <input type="date" name="startDate" class="form-control" required />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">End Date</label>
+                <input type="date" name="endDate" class="form-control" required />
+            </div>
+
+            @* FIXED: Swapped raw text box with status selector dropdown *@
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Availability Status</label>
+                <select name="reason" class="form-select" required>
+                    <option value="">-- Choose Status Category --</option>
+                    <option value="Maintenance">🛠️ Maintenance Mode</option>
+                    <option value="Unavailable">🚫 Temporarily Unavailable</option>
+                    <option value="Other">⚠️ Other / Special Use Block</option>
+                </select>
+            </div>
+
+            @* ADDED: Optional notes field to capture repair specifics or details *@
+            <div class="col-md-9">
+                <label class="form-label text-muted small">Additional Log Notes (Optional)</label>
+                <input type="text" name="notes" class="form-control" placeholder="e.g., Water line leak repair, winter closure, etc." />
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-warning w-100 fw-bold">Apply Status Block</button>
+            </div>
+        </form>
+    </div>
+
+    <table class="table table-hover border">
+        <thead class="table-dark">
+            <tr>
+                <th>Start</th>
+                <th>End</th>
+                <th>Reason / Status Context</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Blocks.Any())
+            {
+                <tr><td colspan="4" class="text-muted text-center">No blocks for this site.</td></tr>
+            }
+            @foreach (var b in Model.Blocks.OrderBy(x => x.StartDate))
+            {
+                <tr>
+                    <td>@b.StartDate.ToString("MM/dd/yyyy")</td>
+                    <td>@b.EndDate.ToString("MM/dd/yyyy")</td>
+                    <td>@b.Reason</td>
+                    <td>
+                        <form method="post" asp-action="Unblock" onsubmit="return confirm('Remove this block?');" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@b.Id" />
+                            <input type="hidden" name="siteId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Unblock</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a asp-action="Index" class="btn btn-secondary">🔙 Back to Sites</a>
+</div>

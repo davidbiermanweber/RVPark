@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+[EmployeeOnly]
 public class UsersController : Controller
 {
     private readonly AppDbContext _db;

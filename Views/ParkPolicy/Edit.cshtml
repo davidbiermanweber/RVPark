@@ -1,0 +1,102 @@
+@model ParkPolicy
+@{
+    ViewData["Title"] = "Park Policies";
+    var months = System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.MonthNames
+        .Take(12).Select((m, i) => new SelectListItem(m, (i + 1).ToString()));
+}
+
+<h2>⚙️ Park Policies</h2>
+<p class="text-muted">Reservation stay rules and the cancellation policy. These settings are read by booking and cancellation logic; changing them does not alter existing reservations.</p>
+
+@if (TempData["Saved"] != null)
+{
+    <div class="alert alert-success">Policies saved.</div>
+}
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">🏕️ Stay rules</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="BookingWindowMonths" class="form-label"></label>
+                        <input asp-for="BookingWindowMonths" class="form-control" />
+                        <div class="form-text">How far in advance guests may reserve.</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="PeakStartMonth" class="form-label"></label>
+                            <select asp-for="PeakStartMonth" asp-items="months" class="form-select"></select>
+                        </div>
+                        <div class="col">
+                            <label asp-for="PeakEndMonth" class="form-label"></label>
+                            <select asp-for="PeakEndMonth" asp-items="months" class="form-select"></select>
+                        </div>
+                        <div class="col">
+                            <label asp-for="PeakMaxStayDays" class="form-label"></label>
+                            <input asp-for="PeakMaxStayDays" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="LongTermStartMonth" class="form-label"></label>
+                            <select asp-for="LongTermStartMonth" asp-items="months" class="form-select"></select>
+                        </div>
+                        <div class="col-3">
+                            <label asp-for="LongTermStartDay" class="form-label">Day</label>
+                            <input asp-for="LongTermStartDay" class="form-control" />
+                        </div>
+                        <div class="col">
+                            <label asp-for="LongTermEndMonth" class="form-label"></label>
+                            <select asp-for="LongTermEndMonth" asp-items="months" class="form-select"></select>
+                        </div>
+                        <div class="col-3">
+                            <label asp-for="LongTermEndDay" class="form-label">Day</label>
+                            <input asp-for="LongTermEndDay" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-text mb-3">Window when long-term (winter) stays are allowed.</div>
+                    <div class="mb-1">
+                        <label asp-for="AwayBeforeReturnDays" class="form-label"></label>
+                        <input asp-for="AwayBeforeReturnDays" class="form-control" />
+                        <div class="form-text">After a maximum-length stay, a guest must remain away this many days before reserving again.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">💵 Cancellation policy</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="CancellationFee" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="CancellationFee" class="form-control" />
+                        </div>
+                        <div class="form-text">Charged for a standard (timely) cancellation.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CancellationThresholdDays" class="form-label"></label>
+                        <input asp-for="CancellationThresholdDays" class="form-control" />
+                        <div class="form-text">Cancelling fewer than this many days before arrival counts as a late cancellation.</div>
+                    </div>
+                    <div class="form-check mb-1">
+                        <input asp-for="LateCancelChargesOneNight" class="form-check-input" />
+                        <label asp-for="LateCancelChargesOneNight" class="form-check-label"></label>
+                        <div class="form-text">When checked, late or holiday-period cancellations are charged one night's rate instead of the flat fee.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Save policies</button>
+    </div>
+</form>

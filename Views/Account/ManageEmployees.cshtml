@@ -2,14 +2,23 @@
 
 <h2>Manage Employees</h2>
 
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-warning">@errorMessage</div>
+}
+
+<div class="mb-3">
+    <a asp-action="CreateEmployee" class="btn btn-success">Create Employee</a>
+</div>
+
 <table class="table table-striped mt-3">
     <thead>
         <tr>
             <th>Employee ID</th>
             <th>Name</th>
             <th>Username</th>
-            <th>Password</th>
             <th>Access Level</th>
+            <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -20,7 +29,6 @@
                 <td>@emp.EmployeeId</td>
                 <td>@emp.Name</td>
                 <td>@emp.Username</td>
-                <td>@emp.Password</td>
                 <td>
                     @if(emp.AccessLevel == 3)
                     {
@@ -32,7 +40,26 @@
                     }
                 </td>
                 <td>
-                    <a asp-action="EditAccessLevel" asp-route-id="@emp.Id" class="btn btn-sm btn-primary">Edit Access</a>
+                    @if (emp.IsLocked)
+                    {
+                        <span class="badge bg-danger">Locked</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a asp-action="EditEmployee" asp-route-id="@emp.Id" class="btn btn-sm btn-primary">Edit</a>
+                        <a asp-action="EditAccessLevel" asp-route-id="@emp.Id" class="btn btn-sm btn-outline-primary">Access</a>
+                        <form asp-action="ToggleLockEmployee" asp-route-id="@emp.Id" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-warning">@(emp.IsLocked ? "Unlock" : "Lock")</button>
+                        </form>
+                        <form asp-action="DeleteEmployee" asp-route-id="@emp.Id" method="post" style="display:inline;" onsubmit="return confirm('Delete this employee?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         }

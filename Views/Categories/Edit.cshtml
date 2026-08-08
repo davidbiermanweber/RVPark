@@ -1,8 +1,12 @@
 @model Category
-@{ ViewData["Title"] = "Edit Category"; }
+@{
+    ViewData["Title"] = "Edit Site Type";
+    var prices = (List<CategoryPrice>)ViewBag.Prices;
+    var today = DateTime.Today;
+}
 
-<h2>Edit Category</h2>
-<form asp-action="Edit" method="post">
+<h2>Edit Site Type</h2>
+<form asp-action="Edit" method="post" class="mb-4">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
@@ -11,3 +15,132 @@
     <button type="submit" class="btn btn-primary">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+<hr />
+
+<h4>💲 Rate schedule</h4>
+<p class="text-muted">
+    Dated rates for this site type. To schedule a future increase (e.g. effective Oct&nbsp;1),
+    add a new rate starting that day — current reservations keep the rate they booked at.
+    Tag event/holiday rates so special periods stand out.
+</p>
+
+@if (TempData["PriceError"] != null)
+{
+    <div class="alert alert-danger">@TempData["PriceError"]</div>
+}
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Price/night</th>
+            <th>Rate type</th>
+            <th>Label</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in prices)
+        {
+            var isCurrent = p.StartDate <= today && (p.EndDate == null || p.EndDate >= today);
+            var isScheduled = p.StartDate > today;
+            <tr>
+                <td>
+                    @if (isCurrent)
+                    {
+                        <span class="badge bg-success">Current</span>
+                    }
+                    else if (isScheduled)
+                    {
+                        <span class="badge bg-info text-dark">Scheduled</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Past</span>
+                    }
+                </td>
+                <td colspan="5">
+                    <form asp-controller="CategoryPrices" asp-action="Edit" method="post" class="row g-2 align-items-center">
+                        <input type="hidden" name="Id" value="@p.Id" />
+                        <input type="hidden" name="CategoryId" value="@p.CategoryId" />
+                        <div class="col-auto">
+                            <input type="date" name="StartDate" value="@p.StartDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-auto">
+                            <input type="date" name="EndDate" value="@(p.EndDate?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" placeholder="ongoing" />
+                        </div>
+                        <div class="col-auto" style="max-width: 110px;">
+                            <input type="number" step="0.01" min="0" name="Price" value="@p.Price" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-auto">
+                            <select name="PriceType" class="form-select form-select-sm">
+                                @foreach (PriceType t in Enum.GetValues<PriceType>())
+                                {
+                                    <option value="@t" selected="@(p.PriceType == t)">@t</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <input type="text" name="Label" value="@p.Label" maxlength="100" class="form-control form-control-sm" placeholder="label (optional)" />
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Update</button>
+                        </div>
+                    </form>
+                </td>
+                <td>
+                    <form asp-controller="CategoryPrices" asp-action="Delete" method="post" class="d-inline">
+                        <input type="hidden" name="id" value="@p.Id" />
+                        <input type="hidden" name="categoryId" value="@p.CategoryId" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                onclick="return confirm('Delete this rate?');">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        @if (prices.Count == 0)
+        {
+            <tr><td colspan="7" class="text-muted">No rates yet — add the first one below.</td></tr>
+        }
+    </tbody>
+</table>
+
+<div class="card shadow-sm" style="max-width: 720px;">
+    <div class="card-header fw-bold">Add a rate</div>
+    <div class="card-body">
+        <form asp-controller="CategoryPrices" asp-action="Create" method="post" class="row g-2 align-items-end">
+            <input type="hidden" name="CategoryId" value="@Model.Id" />
+            <div class="col-auto">
+                <label class="form-label">Start</label>
+                <input type="date" name="StartDate" value="@today.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
+            </div>
+            <div class="col-auto">
+                <label class="form-label">End <span class="text-muted">(blank = ongoing)</span></label>
+                <input type="date" name="EndDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-auto" style="max-width: 110px;">
+                <label class="form-label">Price/night</label>
+                <input type="number" step="0.01" min="0" name="Price" class="form-control form-control-sm" required />
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Rate type</label>
+                <select name="PriceType" class="form-select form-select-sm">
+                    @foreach (PriceType t in Enum.GetValues<PriceType>())
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Label</label>
+                <input type="text" name="Label" maxlength="100" class="form-control form-control-sm" placeholder="e.g. Oct 1 increase" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">Add rate</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "Email verification";
+    var success = ViewBag.Success == true;
+}
+
+<div class="container text-center" style="max-width: 520px;">
+    @if (success)
+    {
+        <h2 class="mb-3 text-success">✅ Email verified</h2>
+        <p>Your account is now active. You can sign in and start browsing sites.</p>
+        <a asp-action="Login" class="btn btn-success mt-2">Sign in</a>
+    }
+    else
+    {
+        <h2 class="mb-3 text-danger">⚠️ Verification failed</h2>
+        <p>This verification link is invalid or has expired. Try registering again or request a new link.</p>
+        <a asp-action="Register" class="btn btn-primary mt-2">Back to register</a>
+    }
+</div>

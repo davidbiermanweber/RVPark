@@ -1,0 +1,184 @@
+@model Reservation
+@{
+    ViewData["Title"] = "Edit Reservation";
+}
+
+<div class="mb-4">
+
+    <h2>Edit Reservation</h2>
+
+    <p class="text-muted">
+        Reservation #@Model.Id
+    </p>
+
+</div>
+
+
+<div asp-validation-summary="All"
+     class="text-danger mb-3">
+</div>
+
+
+<div class="card shadow-sm">
+
+    <div class="card-header">
+
+        <strong>
+            Reservation Information
+        </strong>
+
+    </div>
+
+
+    <div class="card-body">
+
+        <div class="row mb-4">
+
+            <div class="col-md-6">
+
+                <h5>Customer</h5>
+
+                <p class="mb-1">
+                    <strong>Name:</strong>
+                    @Model.User?.Name
+                </p>
+
+                <p class="mb-1">
+                    <strong>Email:</strong>
+                    @Model.User?.Email
+                </p>
+
+                <p>
+                    <strong>Phone:</strong>
+                    @Model.User?.Phone
+                </p>
+
+            </div>
+
+
+            <div class="col-md-6">
+
+                <h5>Assigned Site</h5>
+
+                <p class="mb-1">
+
+                    <strong>Site:</strong>
+
+                    @(Model.Site?.Name
+                        ?? "Not Assigned")
+
+                </p>
+
+                @if (Model.Site != null &&
+                     Model.Site.MaxRvLength > 0)
+                {
+                    <p>
+
+                        <strong>
+                            Maximum RV Length:
+                        </strong>
+
+                        @Model.Site.MaxRvLength ft
+
+                    </p>
+                }
+
+            </div>
+
+        </div>
+
+
+        <hr />
+
+
+        <form asp-action="Edit"
+            asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Arrival Date
+                    </label>
+
+                    <input type="date"
+                           name="startDate"
+                           value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                           class="form-control"
+                           required />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Departure Date
+                    </label>
+
+                    <input type="date"
+                           name="finishDate"
+                           value="@Model.FinishDate.ToString("yyyy-MM-dd")"
+                           class="form-control"
+                           required />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        RV Length (feet)
+                    </label>
+
+                    <input type="number"
+                           name="rvLength"
+                           value="@Model.RvLength"
+                           min="1"
+                           class="form-control"
+                           required />
+
+                </div>
+
+            </div>
+
+
+            <div class="alert alert-info">
+
+                Changing reservation dates or RV length
+                automatically performs a new availability
+                and compatibility check before the reservation
+                is updated.
+
+            </div>
+
+
+            <div class="mt-4">
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    Save Changes
+
+                </button>
+
+                <a asp-action="Details"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

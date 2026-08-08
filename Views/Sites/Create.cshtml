@@ -17,6 +17,14 @@
         <select asp-for="CategoryId" class="form-control"
             asp-items="@(ViewBag.Categories as SelectList)"></select>
     </div>
+    <div class="mb-3">
+        <label asp-for="MaxRvLength" class="form-label">Max RV Length (ft, 0 = unspecified)</label>
+        <input asp-for="MaxRvLength" type="number" min="0" class="form-control" />
+    </div>
+    <div class="mb-3 form-check">
+        <input asp-for="IsActive" class="form-check-input" />
+        <label asp-for="IsActive" class="form-check-label">Active (available for booking)</label>
+    </div>
     <button type="submit" class="btn btn-success">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>

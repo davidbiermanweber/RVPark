@@ -33,16 +33,10 @@
                 <select name="siteId" class="form-select" required>
                     @foreach (var site in ViewBag.AllSites as List<Site>)
                     {
-                        <option value="@site.Id">
-                            @site.Name - (@site.Description)
+                        <option value="@site.Id" selected="@(site.Id == Model.SiteId)">
+                            @site.Name (@site.Category?.Name)
                         </option>
                     }
-                </select>
-                <label class="form-label fw-bold">Update Campground Site Operational Status</label>
-                <select name="siteStatus" class="form-select">
-                    <option value="Available">🟢 Available for Booking</option>
-                    <option value="Unavailable">🔴 Unavailable / Closed</option>
-                    <option value="Maintenance">🟡 Under Active Maintenance</option>
                 </select>
             </div>
 
