@@ -54,16 +54,38 @@ namespace RvParkApp.Controllers
         // SECURE ACTIONS: RESTRICTED TO LOGGED-IN CUSTOMERS ONLY
         // ========================================================
 
-        [HttpPost]
-        public async Task<IActionResult> Reserve(int siteId, DateTime start, DateTime end, int rvLength)
+        [HttpGet]
+        public async Task<IActionResult> Confirm(int siteId, DateTime start, DateTime end, int rvLength)
         {
             if (!User.Identity?.IsAuthenticated ?? true)
-            {
                 return RedirectToAction("Login", "CustomerAccount");
-            }
 
             var context = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var site = await context.Sites.Include(s => s.Category).FirstOrDefaultAsync(s => s.Id == siteId);
+            if (site == null) return NotFound();
 
+            int nights = Math.Max(1, (end - start).Days);
+            ViewBag.Site = site;
+            ViewBag.Start = start.ToString("MMM d, yyyy");
+            ViewBag.End = end.ToString("MMM d, yyyy");
+            ViewBag.Nights = nights;
+            ViewBag.Total = nights * 35.00m;
+            ViewBag.SiteId = siteId;
+            ViewBag.StartRaw = start.ToString("yyyy-MM-dd");
+            ViewBag.EndRaw = end.ToString("yyyy-MM-dd");
+            ViewBag.RvLength = rvLength;
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Reserve(int siteId, DateTime start, DateTime end, int rvLength,
+            int numberOfAdults, int numberOfChildren, bool hasPets, string specialRequests)
+        {
+            if (!User.Identity?.IsAuthenticated ?? true)
+                return RedirectToAction("Login", "CustomerAccount");
+
+            var context = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
             var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(idClaim, out int userId)) return Challenge();
 
@@ -80,14 +102,18 @@ namespace RvParkApp.Controllers
                 RvLength = rvLength,
                 DailyRate = 35.00m,
                 TotalCost = totalNights * 35.00m,
-                ReservationStatus = "Pending Payment"
+                ReservationStatus = "Pending Payment",
+                NumberOfAdults = numberOfAdults,
+                NumberOfChildren = numberOfChildren,
+                HasPets = hasPets,
+                SpecialRequests = specialRequests ?? string.Empty
             };
 
             context.Reservations.Add(newReservation);
             await context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"Success! Site '{site.Name}' has been temporarily reserved.";
-            return RedirectToAction("Search");
+            TempData["SuccessMessage"] = $"Success! Site '{site.Name}' has been reserved.";
+            return RedirectToAction("MyReservations", "CustomerAccount");
         }
 
         [Authorize] // Requires login to modify an active stay
