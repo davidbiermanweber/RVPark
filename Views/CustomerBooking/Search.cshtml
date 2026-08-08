@@ -94,15 +94,12 @@
                                 }
                                 else
                                 {
-                                    <form asp-controller="CustomerBooking" asp-action="Reserve" method="post">
-                                        <!-- Hidden input tracking tokens passed down to the backend engine -->
-                                        <input type="hidden" name="siteId" value="@site.Id" />
-                                        <input type="hidden" name="start" value="@Model.Start?.ToString("yyyy-MM-dd")" />
-                                        <input type="hidden" name="end" value="@Model.End?.ToString("yyyy-MM-dd")" />
-                                        <input type="hidden" name="rvLength" value="@Model.RvLength" />
-
-                                        <button type="submit" class="btn btn-success w-100">⛺ Confirm Reservation</button>
-                                    </form>
+                                    <a asp-controller="CustomerBooking" asp-action="Confirm"
+                                       asp-route-siteId="@site.Id"
+                                       asp-route-start="@Model.Start?.ToString("yyyy-MM-dd")"
+                                       asp-route-end="@Model.End?.ToString("yyyy-MM-dd")"
+                                       asp-route-rvLength="@Model.RvLength"
+                                       class="btn btn-success w-100">⛺ Book This Site</a>
                                 }
                             </div>
 

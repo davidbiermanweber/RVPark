@@ -36,6 +36,8 @@ public class Reservation
     // Fees (you already have this concept)
     public ICollection<ReservationFee>? ReservationFees { get; set; }
 
-
-
+    public int NumberOfAdults { get; set; } = 1;
+    public int NumberOfChildren { get; set; } = 0;
+    public bool HasPets { get; set; } = false;
+    public string SpecialRequests { get; set; } = string.Empty;
 }
