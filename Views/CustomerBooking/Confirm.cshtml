@@ -1,0 +1,49 @@
+@{ ViewData["Title"] = "Complete Your Reservation"; }
+
+<div class="container mt-4" style="max-width:600px;">
+    <h2>Complete Your Reservation</h2>
+    <hr />
+
+    @{
+        var site = ViewBag.Site as Site;
+    }
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">⛺ @site?.Name</h5>
+            <p class="text-muted mb-1">@site?.Category?.Name</p>
+            <p><strong>@ViewBag.Start</strong> → <strong>@ViewBag.End</strong> (@ViewBag.Nights nights)</p>
+            <p class="fw-bold fs-5">Estimated Total: $@ViewBag.Total</p>
+        </div>
+    </div>
+
+    <form asp-controller="CustomerBooking" asp-action="Reserve" method="post">
+        <input type="hidden" name="siteId" value="@ViewBag.SiteId" />
+        <input type="hidden" name="start" value="@ViewBag.StartRaw" />
+        <input type="hidden" name="end" value="@ViewBag.EndRaw" />
+        <input type="hidden" name="rvLength" value="@ViewBag.RvLength" />
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Number of Adults</label>
+            <input type="number" name="numberOfAdults" class="form-control" min="1" value="1" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Number of Children</label>
+            <input type="number" name="numberOfChildren" class="form-control" min="0" value="0" />
+        </div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input type="checkbox" name="hasPets" value="true" class="form-check-input" id="hasPets" />
+                <input type="hidden" name="hasPets" value="false" />
+                <label class="form-check-label fw-bold" for="hasPets">Bringing Pets?</label>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Special Requests / Notes</label>
+            <textarea name="specialRequests" class="form-control" rows="3" placeholder="Any special needs or requests..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100">Confirm Reservation</button>
+        <a asp-controller="CustomerBooking" asp-action="Search" class="btn btn-outline-secondary w-100 mt-2">Back to Search</a>
+    </form>
+</div>

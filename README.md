@@ -51,4 +51,9 @@ Employee-level login credentials: username: employee password: password
 
 Administrator-level login credentials: username: admin password: password
 
+Fee images:
+Pexels (pexels.com)
+Pixabay (pixabay.com)
+All three are free for commercial and personal use.
+
 
