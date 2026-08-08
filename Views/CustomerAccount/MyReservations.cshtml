@@ -65,6 +65,21 @@ else
                                 <strong>@r.FinishDate.ToString("MMM d, yyyy")</strong>
                                 <span class="text-muted">(@nights night@(nights == 1 ? "" : "s"))</span>
                             </div>
+                            <div class="mt-2 small text-muted">
+                                <span>👤 @r.NumberOfAdults adult@(r.NumberOfAdults == 1 ? "" : "s")</span>
+                                @if (r.NumberOfChildren > 0)
+                                {
+                                    <span class="ms-2">🧒 @r.NumberOfChildren child@(r.NumberOfChildren == 1 ? "" : "ren")</span>
+                                }
+                                @if (r.HasPets)
+                                {
+                                    <span class="ms-2">🐾 Pets</span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(r.SpecialRequests))
+                            {
+                                <div class="mt-1 small text-muted fst-italic">📝 @r.SpecialRequests</div>
+                            }
                             <table class="table table-sm mt-2 mb-0">
                                 <tbody>
                                     <tr>
