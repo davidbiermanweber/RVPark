@@ -1,7 +1,8 @@
-﻿@model AvailabilitySearchViewModel
+@model AvailabilitySearchViewModel
 @{
     ViewData["Title"] = "Find a Campsite";
     var results = ViewBag.Results as List<Site>;
+    var nightlyPrices = ViewBag.NightlyPrices as Dictionary<int, decimal> ?? new Dictionary<int, decimal>();
     var role = User.FindFirst("Role")?.Value;
     var isStaffUser = User.Identity?.IsAuthenticated == true &&
                       (string.Equals(role, "Employee", StringComparison.OrdinalIgnoreCase) ||
@@ -10,6 +11,8 @@
 
 <div class="container mt-4">
     <h2>Book Your Stay</h2>
+
+    @* SUCCESS ALERT BANNER *@
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
@@ -17,10 +20,20 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+
+    @* ERROR CONFLICT BANNER *@
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <hr />
 
     <form asp-controller="CustomerBooking" asp-action="Search" method="post" class="row g-3 p-3 bg-light rounded shadow-sm">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div asp-validation-summary="All" class="text-danger fw-bold"></div>
 
         <div class="col-md-3">
             <label class="form-label font-weight-bold">Check-In Date</label>
@@ -32,7 +45,6 @@
             <input type="date" name="End" class="form-control" value="@(Model?.End?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"))" required />
         </div>
 
-        @* FIXED: Swapped raw input box with dynamic dropdown to remove numeric ID confusion *@
         <div class="col-md-3">
             <label class="form-label font-weight-bold">Site Type</label>
             <select name="CategoryId" class="form-select" required>
@@ -41,7 +53,6 @@
                 {
                     foreach (var category in (List<Category>)ViewBag.Categories)
                     {
-                        @* Keeps the item selected if a customer submitted the form and the page reloaded *@
                         bool isSelected = Model != null && Model.CategoryId == category.Id;
                         if (isSelected)
                         {
@@ -57,7 +68,7 @@
         </div>
 
         <div class="col-md-3">
-            <label class="form-label font-weight-bold">RV Length (Feet)</label>
+            <label class="form-label font-weight-bold">RV Length (Minimum Feet)</label>
             <input type="number" name="RvLength" class="form-control" value="@Model?.RvLength" min="0" placeholder="0 if no RV" />
         </div>
 
@@ -78,13 +89,22 @@
             <div class="row mt-3">
                 @foreach (var site in results)
                 {
+                    nightlyPrices.TryGetValue(site.CategoryId, out decimal exactPricePerNight);
+                    int stayLengthNights = Model != null && Model.Start.HasValue && Model.End.HasValue ? (Model.End.Value - Model.Start.Value).Days : 1;
+                    decimal calculatedEstTotal = exactPricePerNight * stayLengthNights;
+
                     <div class="col-md-4 mb-4">
-                        <div class="card h-100 shadow-sm">
+                        <div class="card h-100 shadow-sm border-success">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">🟢 Available</span>
+                                <span class="badge bg-light text-success font-weight-bold">@exactPricePerNight.ToString("C")/night</span>
+                            </div>
                             <div class="card-body">
                                 <h5 class="card-title">@site.Name</h5>
                                 <p class="card-text text-muted">@site.Description</p>
                                 <ul class="list-unstyled custom-list small">
                                     <li><strong>Max RV Limit:</strong> @site.MaxRvLength ft</li>
+                                    <li class="mt-2 text-dark font-weight-bold">Estimated Cost (@stayLengthNights nights): @calculatedEstTotal.ToString("C")</li>
                                 </ul>
                             </div>
                             <div class="card-footer bg-transparent border-0 pb-3">
@@ -102,7 +122,6 @@
                                        class="btn btn-success w-100">⛺ Book This Site</a>
                                 }
                             </div>
-
                         </div>
                     </div>
                 }
