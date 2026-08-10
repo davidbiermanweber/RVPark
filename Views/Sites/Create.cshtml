@@ -4,22 +4,38 @@
 <h2>Add Site</h2>
 
 <form asp-action="Create" method="post">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Please correct the following before saving:</strong>
+            <div asp-validation-summary="All" class="mb-0"></div>
+        </div>
+    }
+
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control"/>
+        <span asp-validation-for="Name" class="text-danger small"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Description" class="form-label"></label>
         <input asp-for="Description" class="form-control"/>
+        <span asp-validation-for="Description" class="text-danger small"></span>
     </div>
     <div class="mb-3">
         <label asp-for="CategoryId" class="form-label">Category</label>
         <select asp-for="CategoryId" class="form-control"
-            asp-items="@(ViewBag.Categories as SelectList)"></select>
+            asp-items="@(ViewBag.Categories as SelectList)">
+            @* value="0" (not "") so an unselected dropdown fails the [Range] rule with a
+               readable message instead of a raw "value '' is invalid" binder error. *@
+            <option value="0">-- Select a site type --</option>
+        </select>
+        <span asp-validation-for="CategoryId" class="text-danger small"></span>
     </div>
     <div class="mb-3">
         <label asp-for="MaxRvLength" class="form-label">Max RV Length (ft, 0 = unspecified)</label>
-        <input asp-for="MaxRvLength" type="number" min="0" class="form-control" />
+        <input asp-for="MaxRvLength" type="number" min="0" max="120" class="form-control" />
+        <span asp-validation-for="MaxRvLength" class="text-danger small"></span>
     </div>
     <div class="mb-3 form-check">
         <input asp-for="IsActive" class="form-check-input" />
@@ -28,3 +44,7 @@
     <button type="submit" class="btn btn-success">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

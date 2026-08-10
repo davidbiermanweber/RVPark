@@ -99,12 +99,19 @@ public class CustomerAccountController : Controller
     // ---------- Login / logout (G2) ----------
 
     [HttpGet]
-    public IActionResult Login() => View();
+    public IActionResult Login(string? returnUrl = null)
+    {
+        ViewBag.ReturnUrl = returnUrl;
+        return View();
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(string email, string password)
+    public async Task<IActionResult> Login(string email, string password, string? returnUrl = null)
     {
+        // Kept on every failure path so the site/dates the guest picked survive a typo.
+        ViewBag.ReturnUrl = returnUrl;
+
         var normalized = (email ?? string.Empty).Trim().ToLowerInvariant();
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalized);
 
@@ -128,6 +135,12 @@ public class CustomerAccountController : Controller
         }
 
         await SignInCustomerAsync(user);
+
+        // Send them back to whatever they were doing (e.g. the booking they'd already
+        // picked a site and dates for). IsLocalUrl guards against open-redirect abuse.
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
         return RedirectToAction("Search", "CustomerBooking");
     }
 

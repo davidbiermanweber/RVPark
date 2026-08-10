@@ -28,7 +28,34 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login"; // Redirects here if not logged in
+        options.LoginPath = "/Account/Login"; // Staff login — the default for admin areas
+
+        // Customers and staff sign in through different pages, but cookie auth only
+        // supports one LoginPath. Pick the right one from the area the request was
+        // headed for, so a guest booking a site lands on the customer sign-in page
+        // instead of the employee one.
+        options.Events.OnRedirectToLogin = context =>
+        {
+            var target = context.Request.Path.Value ?? string.Empty;
+
+            bool isCustomerArea =
+                target.StartsWith("/CustomerBooking", StringComparison.OrdinalIgnoreCase) ||
+                target.StartsWith("/CustomerAccount", StringComparison.OrdinalIgnoreCase) ||
+                target.StartsWith("/Payment", StringComparison.OrdinalIgnoreCase);
+
+            var loginPath = isCustomerArea ? "/CustomerAccount/Login" : "/Account/Login";
+
+            // Only round-trip a GET. Sending someone back to a POST-only action after
+            // signing in would just 405.
+            if (HttpMethods.IsGet(context.Request.Method))
+            {
+                var returnUrl = context.Request.Path + context.Request.QueryString;
+                loginPath += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
+            }
+
+            context.Response.Redirect(loginPath);
+            return Task.CompletedTask;
+        };
     });
 
 

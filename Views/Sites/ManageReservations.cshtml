@@ -163,17 +163,16 @@
                                     </select>
                                 </div>
 
-                                @* DYNAMIC OPERATION DROPDOWN CONTROL WINDOW *@
+                                @* RESERVATION ACTIONS ONLY — campsite status lives in its own section below *@
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold text-primary">Availability & Status Modifier</label>
+                                    <label class="form-label fw-bold text-primary">Reservation Action</label>
                                     <select name="statusAction" class="form-select border-primary" required>
                                         <option value="Update" selected="@(!isCancelled)">🟢 Keep Active / Apply Changes</option>
-                                        <option value="Cancel" selected="@isCancelled">❌ Cancel Booking & Issue Auto-Refund</option>
+                                        <option value="Cancel" selected="@isCancelled">❌ Cancel Booking &amp; Issue Auto-Refund</option>
                                         <option value="Complete">✅ Mark Reservation as Completed</option>
                                         <option value="UnCancel">🔄 Reactivate Cancelled Booking Status</option>
-                                        <option value="Maintenance">🛠️ Shift Campsite to Maintenance Block</option>
-                                        <option value="Unavailable">🚫 Shift Campsite to Temporarily Unavailable</option>
                                     </select>
+                                    <div class="form-text">Applies to this booking only — it does not change the campsite's availability.</div>
                                 </div>
 
                                 <div class="mb-3">
@@ -187,12 +186,33 @@
                                         <div class="border rounded p-2 bg-light">@item.Notes</div>
                                     }
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label text-muted small">Status Log / Block Reason Notes (Optional)</label>
-                                    <input type="text" name="notes" class="form-control"
-                                           placeholder="e.g. Broken utility line, winterizing, guest request" />
-                                </div>
+                            @* CAMPSITE STATUS — separate concern, separate controls. Its own
+                               panel so it reads as "manage the site", not "save this booking". *@
+                            <div class="modal-body border-top pt-3">
+                                <label class="form-label fw-bold text-secondary">Campsite Status</label>
+                                @if (item.SiteId != null)
+                                {
+                                    <p class="text-muted small mb-2">
+                                        Taking <strong>@(item.Site?.Name ?? "this site")</strong> out of service affects
+                                        <em>every</em> booking for it, so it's managed separately:
+                                    </p>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a asp-controller="Sites" asp-action="Blocks" asp-route-siteId="@item.SiteId"
+                                           class="btn btn-sm btn-outline-warning" target="_blank">
+                                            🛠️ Maintenance Blocks
+                                        </a>
+                                        <a asp-controller="Sites" asp-action="Edit" asp-route-id="@item.SiteId"
+                                           class="btn btn-sm btn-outline-secondary" target="_blank">
+                                            🚫 Take Site Out of Service
+                                        </a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-muted small mb-0">No campsite is assigned to this reservation yet.</p>
+                                }
                             </div>
                             <div class="modal-footer bg-light">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

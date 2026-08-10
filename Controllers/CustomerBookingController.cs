@@ -165,8 +165,15 @@ namespace RvParkApp.Controllers
         [HttpGet]
         public async Task<IActionResult> Confirm(int siteId, DateTime start, DateTime end, int rvLength)
         {
+            // Guests can browse and pick a site before signing in. Carry the whole
+            // selection through the login round-trip so they don't have to search again.
             if (!User.Identity?.IsAuthenticated ?? true)
-                return RedirectToAction("Login", "CustomerAccount");
+            {
+                var returnUrl = Url.Action(nameof(Confirm), "CustomerBooking",
+                    new { siteId, start = start.ToString("yyyy-MM-dd"), end = end.ToString("yyyy-MM-dd"), rvLength });
+
+                return RedirectToAction("Login", "CustomerAccount", new { returnUrl });
+            }
 
             var context = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
             var site = await context.Sites.Include(s => s.Category).FirstOrDefaultAsync(s => s.Id == siteId);

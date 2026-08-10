@@ -1,9 +1,17 @@
 @{
     ViewData["Title"] = "Sign In";
+    var returnUrl = ViewBag.ReturnUrl as string;
 }
 
 <div class="container" style="max-width: 420px;">
     <h2 class="mb-3">Sign in</h2>
+
+    @if (!string.IsNullOrEmpty(returnUrl))
+    {
+        <div class="alert alert-info small">
+            Sign in to finish what you started — we'll take you right back.
+        </div>
+    }
 
     @if (ViewBag.Error != null)
     {
@@ -12,6 +20,7 @@
 
     <form method="post" asp-action="Login">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
         <div class="mb-3">
             <label class="form-label">Email</label>
             <input type="email" name="email" class="form-control" required />

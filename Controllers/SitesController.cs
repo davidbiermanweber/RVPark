@@ -25,7 +25,7 @@ public class SitesController : Controller
 
     public async Task<IActionResult> Create()
     {
-        ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name");
+        await LoadCategoriesAsync();
         return View();
     }
 
@@ -33,9 +33,20 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Site site)
     {
-        if (!ModelState.IsValid) return View(site);
+        site.Name = site.Name?.Trim() ?? string.Empty;
+        site.Description = site.Description?.Trim() ?? string.Empty;
+
+        await ValidateSiteAsync(site);
+
+        if (!ModelState.IsValid)
+        {
+            await LoadCategoriesAsync();
+            return View(site);
+        }
+
         _db.Sites.Add(site);
         await _db.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"Site \"{site.Name}\" was created.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -43,7 +54,7 @@ public class SitesController : Controller
     {
         var site = await _db.Sites.FindAsync(id);
         if (site == null) return NotFound();
-        ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name");
+        await LoadCategoriesAsync();
         return View(site);
     }
 
@@ -51,10 +62,49 @@ public class SitesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Site site)
     {
-        if (!ModelState.IsValid) return View(site);
+        site.Name = site.Name?.Trim() ?? string.Empty;
+        site.Description = site.Description?.Trim() ?? string.Empty;
+
+        await ValidateSiteAsync(site);
+
+        if (!ModelState.IsValid)
+        {
+            await LoadCategoriesAsync();
+            return View(site);
+        }
+
         _db.Sites.Update(site);
         await _db.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"Site \"{site.Name}\" was updated.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task LoadCategoriesAsync() =>
+        ViewBag.Categories = new SelectList(await _db.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name");
+
+    // Checks the rules DataAnnotations can't see: whitespace-only names, a site type
+    // that no longer exists, and duplicate names (case-insensitive, ignoring itself
+    // on edit). Adds field-level errors so they render next to the offending input.
+    private async Task ValidateSiteAsync(Site site)
+    {
+        if (string.IsNullOrWhiteSpace(site.Name))
+        {
+            // "   " trims to empty, so report it as missing rather than as a duplicate.
+            ModelState.Remove(nameof(Site.Name));
+            ModelState.AddModelError(nameof(Site.Name), "Site name is required.");
+        }
+        else
+        {
+            var name = site.Name.ToLower();
+            bool duplicate = await _db.Sites.AnyAsync(s => s.Id != site.Id && s.Name.ToLower() == name);
+
+            if (duplicate)
+                ModelState.AddModelError(nameof(Site.Name),
+                    $"A site named \"{site.Name}\" already exists. Site names must be unique.");
+        }
+
+        if (site.CategoryId > 0 && !await _db.Categories.AnyAsync(c => c.Id == site.CategoryId))
+            ModelState.AddModelError(nameof(Site.CategoryId), "That site type no longer exists.");
     }
 
     [HttpPost]
@@ -265,6 +315,17 @@ public class SitesController : Controller
 
         // Keep dynamic list loaded for the form view dropdown parameters
         ViewBag.AllSites = await _db.Sites.Include(s => s.Category).ToListAsync();
+
+        // This form only performs reservation actions. Campsite status (maintenance
+        // blocks, taking a site out of service) is managed on the Blocks / Edit Site
+        // pages — mixing them here previously meant "Maintenance" and "Unavailable"
+        // silently fell through and ran a plain date edit instead.
+        var allowedActions = new[] { "Update", "Cancel", "Complete", "UnCancel" };
+        if (!allowedActions.Contains(statusAction))
+        {
+            ModelState.AddModelError("", $"'{statusAction}' is not a valid reservation action.");
+            return View(res);
+        }
 
         // ❌ ACTION 1: CANCEL RESERVATION
         if (statusAction == "Cancel")
