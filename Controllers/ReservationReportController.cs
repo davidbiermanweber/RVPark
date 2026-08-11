@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RvParkApp.Models;
 
+// Reports expose customer names, emails, phone numbers and revenue totals. The nav
+// link was already admin-gated but the controller itself had no guard, so the URL
+// returned the full report to anonymous callers.
+[AdminOnly]
 public class ReservationReportController : Controller
 {
     private readonly AppDbContext _context;
