@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-[AdminOnly] // Site + reservation maintenance is admin-only (AccessLevel 3)
+ // Site + reservation maintenance is admin-only (AccessLevel 3)
 public class SitesController : Controller
 {
     private readonly AppDbContext _db;
@@ -14,6 +14,7 @@ public class SitesController : Controller
         _availability = availability;
     }
 
+    [AdminOnly]
     public async Task<IActionResult> Index()
     {
         var sites = await _db.Sites
@@ -23,6 +24,7 @@ public class SitesController : Controller
         return View(sites);
     }
 
+    [AdminOnly]
     public async Task<IActionResult> Create()
     {
         ViewBag.Categories = new SelectList(await _db.Categories.ToListAsync(), "Id", "Name");
@@ -31,6 +33,7 @@ public class SitesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AdminOnly]
     public async Task<IActionResult> Create(Site site)
     {
         if (!ModelState.IsValid) return View(site);
@@ -39,6 +42,7 @@ public class SitesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [AdminOnly]
     public async Task<IActionResult> Edit(int id)
     {
         var site = await _db.Sites.FindAsync(id);
@@ -49,6 +53,7 @@ public class SitesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AdminOnly]
     public async Task<IActionResult> Edit(Site site)
     {
         if (!ModelState.IsValid) return View(site);
@@ -59,6 +64,7 @@ public class SitesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AdminOnly]
     public async Task<IActionResult> Delete(int id)
     {
         var site = await _db.Sites.FindAsync(id);
@@ -73,6 +79,7 @@ public class SitesController : Controller
     // Admin availability grid: sites × dates showing Open / Reserved / Blocked. Loads
     // reservations and blocks once for the window and computes cells in memory.
     [HttpGet]
+    [AdminOnly]
     public async Task<IActionResult> Availability(DateTime? start, int days = 14)
     {
         var startDate = (start ?? DateTime.Today).Date;
@@ -140,6 +147,7 @@ public class SitesController : Controller
 
     // List existing blocks for a site + form to add a new one.
     [HttpGet]
+    [AdminOnly]
     public async Task<IActionResult> Blocks(int siteId)
     {
         var site = await _db.Sites
@@ -152,6 +160,7 @@ public class SitesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AdminOnly]
     public async Task<IActionResult> Block(int siteId, DateTime startDate, DateTime endDate, string reason)
     {
         var site = await _db.Sites.FindAsync(siteId);
@@ -180,6 +189,7 @@ public class SitesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AdminOnly]
     public async Task<IActionResult> Unblock(int id, int siteId)
     {
         var block = await _db.SiteBlocks.FindAsync(id);
@@ -192,6 +202,7 @@ public class SitesController : Controller
     }
 
     // Resolves the logged-in employee's Id from the username claim (audit — NFR-11).
+    [AdminOnly]
     private async Task<int?> CurrentEmployeeIdAsync()
     {
         var username = User.Identity?.Name;
@@ -206,6 +217,7 @@ public class SitesController : Controller
     // =========================================================================
 
     // Master list & search panel.
+    [AdminOnly]
     public async Task<IActionResult> ManageReservations(string searchString)
     {
         // LOAD SITES LIST AND PROPAGATE VIEW DATA SO DROPDOWN GENERATES CLEANLY
@@ -234,6 +246,7 @@ public class SitesController : Controller
 
     // Load the modification form.
     [HttpGet]
+    [AdminOnly]
     public async Task<IActionResult> EditReservation(int id)
     {
         var reservation = await _db.Reservations
@@ -253,6 +266,7 @@ public class SitesController : Controller
     // Cancel / un-cancel / update (site + dates), with fresh availability checks and a balance delta.
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AdminOnly]
     public async Task<IActionResult> EditReservation(int id, DateTime startDate, DateTime finishDate, int siteId, string statusAction, string? notes = null)
     {
         var res = await _db.Reservations
@@ -361,6 +375,7 @@ public class SitesController : Controller
     // =========================================================================
 
     [HttpGet]
+    [EmployeeOnly]
     public async Task<IActionResult> WalkIn()
     {
         ViewBag.AllSites = await _db.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
@@ -374,6 +389,7 @@ public class SitesController : Controller
 
 // JSON endpoint to verify if a user exists by email or phone
     [HttpGet]
+    [EmployeeOnly]
     public async Task<IActionResult> CheckUser(string email, string phone)
     {
         var trimmedEmail = email?.Trim().ToLower();
@@ -394,6 +410,7 @@ public class SitesController : Controller
 
    [HttpPost]
     [ValidateAntiForgeryToken]
+    [EmployeeOnly]
     public async Task<IActionResult> WalkIn(string customerName, string customerEmail, string customerPhone, int siteId, DateTime startDate, DateTime finishDate, int rvLength, bool registerNew = false)
     {
         ViewBag.AllSites = await _db.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
