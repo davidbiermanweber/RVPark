@@ -226,4 +226,120 @@ public class EmployeeReservationController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+    // =========================================================================
+    // Walk-In Reservation Process
+    //
+    // Lives here rather than on SitesController so front-desk employees can
+    // actually use it. SitesController is [AdminOnly] (AccessLevel 3), which
+    // meant the "Process Walk-In" button on this page 403'd for the very staff
+    // it was built for. [EmployeeOnly] still admits admins, since they carry the
+    // same Role=Employee claim.
+    // =========================================================================
+
+    [HttpGet]
+    public async Task<IActionResult> WalkIn()
+    {
+        ViewBag.AllSites = await _context.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
+        return View(new Reservation
+        {
+            StartDate = DateTime.Today,
+            FinishDate = DateTime.Today.AddDays(1),
+            RvLength = 30
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> WalkIn(string customerName, string customerEmail, string customerPhone, int siteId, DateTime startDate, DateTime finishDate, int rvLength, bool registerNew = false)
+    {
+        ViewBag.AllSites = await _context.Sites.Include(s => s.Category).Where(s => s.IsActive).ToListAsync();
+
+        if (finishDate <= startDate)
+        {
+            ModelState.AddModelError("", "Departure must be after arrival.");
+            return View();
+        }
+
+        if (!await _availability.IsSiteAvailableAsync(siteId, startDate, finishDate))
+        {
+            ModelState.AddModelError("", "The selected site is not available for those dates.");
+            return View();
+        }
+
+        var trimmedEmail = customerEmail?.Trim().ToLower();
+        var trimmedPhone = customerPhone?.Trim();
+
+        User? user = null;
+        if (!string.IsNullOrEmpty(trimmedEmail))
+        {
+            user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == trimmedEmail);
+        }
+        if (user == null && !string.IsNullOrEmpty(trimmedPhone))
+        {
+            user = await _context.Users.FirstOrDefaultAsync(u => u.Phone == trimmedPhone);
+        }
+
+        // If user doesn't exist and registration hasn't been confirmed yet
+        if (user == null && !registerNew)
+        {
+            // Pass values back to repopulate the form and trigger the confirmation pop-up
+            ViewBag.TriggerUserPrompt = true;
+            ViewBag.CustomerName = customerName;
+            ViewBag.CustomerEmail = customerEmail;
+            ViewBag.CustomerPhone = customerPhone;
+            ViewBag.SiteId = siteId;
+            ViewBag.StartDate = startDate.ToString("yyyy-MM-dd");
+            ViewBag.FinishDate = finishDate.ToString("yyyy-MM-dd");
+            ViewBag.RvLength = rvLength;
+
+            ModelState.AddModelError("", "Customer not found in the system.");
+            return View();
+        }
+
+        // If user didn't exist but registration was confirmed, create the new user record
+        if (user == null)
+        {
+            var fallbackEmail = string.IsNullOrEmpty(trimmedEmail) ? $"{Guid.NewGuid().ToString().Substring(0, 8)}@walkin.local" : trimmedEmail;
+            user = new User
+            {
+                Name = string.IsNullOrWhiteSpace(customerName) ? "Walk-In Guest" : customerName.Trim(),
+                Email = fallbackEmail,
+                Phone = trimmedPhone ?? string.Empty
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        // Fetch site and calculate pricing using category pricing
+        var site = await _context.Sites.FindAsync(siteId);
+        var today = DateTime.Today;
+        var categoryPrice = await _context.CategoryPrices
+            .Where(p => p.CategoryId == site.CategoryId && p.StartDate <= today && (p.EndDate == null || p.EndDate >= today))
+            .OrderByDescending(p => p.StartDate)
+            .FirstOrDefaultAsync();
+
+        decimal dailyRate = categoryPrice?.Price ?? 0m;
+        int nights = Math.Max(1, (finishDate - startDate).Days);
+
+        var reservation = new Reservation
+        {
+            UserId = user.Id,
+            SiteId = siteId,
+            StartDate = startDate,
+            FinishDate = finishDate,
+            RvLength = rvLength,
+            ReservationStatus = "Active",
+            DailyRate = dailyRate,
+            TotalCost = nights * dailyRate,
+            RefundedAmount = 0m,
+            PriceModifier = 0m
+        };
+
+        _context.Reservations.Add(reservation);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Walk-in reservation #{reservation.Id} successfully created for {user.Name}!";
+        return RedirectToAction(nameof(Index));
+    }
 }

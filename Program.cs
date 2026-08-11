@@ -30,6 +30,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Account/Login"; // Staff login — the default for admin areas
 
+        // Signed in but lacking the role (e.g. employee hitting an [AdminOnly] page).
+        // Stated explicitly: the framework default points at a route that doesn't exist,
+        // which surfaced as a bare 404 instead of a denial message.
+        options.AccessDeniedPath = "/Account/AccessDenied";
+
         // Customers and staff sign in through different pages, but cookie auth only
         // supports one LoginPath. Pick the right one from the area the request was
         // headed for, so a guest booking a site lands on the customer sign-in page

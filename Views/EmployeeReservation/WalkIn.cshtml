@@ -68,7 +68,9 @@
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-success flex-grow-1 py-2 fw-bold">✅ Confirm & Book Walk-In</button>
-                <a asp-action="ManageReservations" class="btn btn-secondary py-2 px-4">Cancel</a>
+                @* Index, not Sites/ManageReservations — that page is admin-only and would
+                   403 the employees this form now serves. *@
+                <a asp-controller="EmployeeReservation" asp-action="Index" class="btn btn-secondary py-2 px-4">Cancel</a>
             </div>
         </form>
     </div>

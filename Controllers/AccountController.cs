@@ -62,6 +62,17 @@ namespace RvParkApp.Controllers
         // GET: /Account/Login
         public IActionResult Login() => View();
 
+        // Where cookie auth sends an authenticated user who lacks the required role
+        // (e.g. an employee hitting an [AdminOnly] page). Without this the framework
+        // redirects to a route that doesn't exist and the user just gets a 404.
+        [AllowAnonymous]
+        public IActionResult AccessDenied(string? returnUrl = null)
+        {
+            ViewBag.ReturnUrl = returnUrl;
+            ViewBag.IsStaff = User.FindFirst("Role")?.Value == "Employee";
+            return View();
+        }
+
         // POST: /Account/Login
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
